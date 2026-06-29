@@ -1,0 +1,349 @@
+.page {
+  background:
+    radial-gradient(circle at top left, rgba(219, 179, 94, 0.16), transparent 32%),
+    radial-gradient(circle at top right, rgba(20, 74, 68, 0.18), transparent 28%),
+    linear-gradient(180deg, #f6f1e7 0%, #fffaf4 50%, #eef2eb 100%);
+  color: #16211d;
+  min-height: 100vh;
+}
+
+.container {
+  margin: 0 auto;
+  max-width: 1240px;
+  padding: 40px 20px 80px;
+}
+
+.hero {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: 1.2fr 0.8fr;
+  padding: 28px 0 44px;
+}
+
+.eyebrow {
+  color: #8b5a20;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  margin-bottom: 14px;
+  text-transform: uppercase;
+}
+
+.hero h1 {
+  font-family: "EB Garamond", serif;
+  font-size: clamp(3rem, 5vw, 5.6rem);
+  line-height: 0.95;
+  margin: 0;
+  max-width: 10ch;
+}
+
+.hero p {
+  font-size: 1.08rem;
+  line-height: 1.7;
+  margin: 20px 0 0;
+  max-width: 62ch;
+}
+
+.heroActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 26px;
+}
+
+.primaryLink,
+.secondaryLink {
+  border-radius: 999px;
+  display: inline-flex;
+  font-weight: 700;
+  padding: 12px 18px;
+  text-decoration: none;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    background 180ms ease;
+}
+
+.primaryLink {
+  background: #153a35;
+  box-shadow: 0 14px 28px rgba(21, 58, 53, 0.2);
+  color: #fff9f0;
+}
+
+.secondaryLink {
+  background: rgba(21, 58, 53, 0.08);
+  color: #153a35;
+}
+
+.heroCard,
+.panel,
+.timelinePanel,
+.candidate,
+.stateCard,
+.metric,
+.actionPanel {
+  backdrop-filter: blur(8px);
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(22, 33, 29, 0.08);
+  border-radius: 28px;
+  box-shadow: 0 16px 50px rgba(36, 39, 33, 0.08);
+}
+
+.heroCard {
+  align-self: end;
+  padding: 28px;
+}
+
+.heroCard h2,
+.panel h2,
+.timelinePanel h2,
+.actionPanel h2 {
+  font-size: 1.1rem;
+  margin: 0 0 14px;
+}
+
+.heroList {
+  display: grid;
+  gap: 14px;
+}
+
+.heroListItem {
+  align-items: center;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 44px 1fr;
+}
+
+.heroListItem span {
+  align-items: center;
+  background: #153a35;
+  border-radius: 14px;
+  color: #fff5ea;
+  display: inline-flex;
+  font-weight: 700;
+  height: 44px;
+  justify-content: center;
+  width: 44px;
+}
+
+.grid {
+  display: grid;
+  gap: 22px;
+  grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+}
+
+.stack {
+  display: grid;
+  gap: 22px;
+}
+
+.metrics {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.metric {
+  padding: 20px;
+}
+
+.metricLabel {
+  color: #55635d;
+  display: block;
+  font-size: 0.86rem;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+}
+
+.metric strong {
+  display: block;
+  font-size: 1.6rem;
+  line-height: 1.1;
+}
+
+.panel,
+.timelinePanel,
+.actionPanel {
+  padding: 24px;
+}
+
+.stateRail {
+  display: grid;
+  gap: 14px;
+}
+
+.stateCard {
+  border-left: 7px solid transparent;
+  padding: 18px 18px 16px;
+  transition: transform 180ms ease;
+}
+
+.stateCardActive {
+  transform: translateX(8px);
+}
+
+.stateHeader {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.badge {
+  background: rgba(21, 58, 53, 0.08);
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 7px 10px;
+  text-transform: uppercase;
+}
+
+.checklist {
+  display: grid;
+  gap: 10px;
+}
+
+.checklistItem {
+  align-items: start;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 20px 1fr;
+}
+
+.dot {
+  border: 2px solid #153a35;
+  border-radius: 999px;
+  height: 20px;
+  margin-top: 2px;
+  width: 20px;
+}
+
+.dotDone {
+  background: #153a35;
+  box-shadow: inset 0 0 0 4px #fff;
+}
+
+.candidates {
+  display: grid;
+  gap: 12px;
+}
+
+.candidate {
+  padding: 18px;
+}
+
+.candidateTop {
+  align-items: flex-start;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.candidate h3 {
+  font-size: 1.05rem;
+  margin: 0 0 4px;
+}
+
+.candidate p,
+.timelineItem p,
+.stateCard p,
+.actionPanel p,
+.panel p {
+  color: #516059;
+  margin: 0;
+}
+
+.rating {
+  color: #8b5a20;
+  font-weight: 700;
+}
+
+.timeline {
+  display: grid;
+  gap: 14px;
+}
+
+.timelineItem {
+  border-left: 2px solid rgba(21, 58, 53, 0.2);
+  padding-left: 18px;
+}
+
+.timelineMeta {
+  color: #8b5a20;
+  display: block;
+  font-size: 0.82rem;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+
+.actorTabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 18px 0 16px;
+}
+
+.actorTab,
+.actionButton,
+.ghostButton {
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  font: inherit;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    background 180ms ease;
+}
+
+.actorTab {
+  background: #ece5d8;
+  color: #28322f;
+  padding: 10px 14px;
+}
+
+.actorTabActive {
+  background: #153a35;
+  box-shadow: 0 10px 24px rgba(21, 58, 53, 0.22);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.actions {
+  display: grid;
+  gap: 12px;
+}
+
+.actionButton,
+.ghostButton {
+  padding: 14px 18px;
+  text-align: left;
+}
+
+.actionButton {
+  background: #153a35;
+  box-shadow: 0 14px 26px rgba(21, 58, 53, 0.2);
+  color: #fff;
+}
+
+.ghostButton {
+  background: rgba(21, 58, 53, 0.08);
+  color: #153a35;
+}
+
+.footerNote {
+  color: #6b746f;
+  font-size: 0.92rem;
+  margin-top: 18px;
+}
+
+@media (max-width: 980px) {
+  .hero,
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .metrics {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,9 +1,8 @@
 import Image from "next/image"
+import SettledLogo from "@/components/common/SettledLogo";
 import Link from "next/link"
 import footer_data from "@/data/home-data/FooterData"
 
-import footerLogo_1 from "@/assets/images/logo/logo_01.svg"
-import footerLogo_2 from "@/assets/images/logo/logo_03.svg"
 import footerShape_1 from "@/assets/images/shape/shape_32.svg"
 import footerShape_2 from "@/assets/images/shape/shape_33.svg"
 
@@ -20,7 +19,7 @@ const FooterOne = ({ style }: any) => {
                         <div className="bg-wrapper">
                            <div className="logo mb-20">
                               <Link href="/">
-                                 <Image src={style ? footerLogo_2 : footerLogo_1} alt="" />
+                                 <SettledLogo width={175} height={66} />
                               </Link>
                            </div>
                            <p className="mb-60 lg-mb-40 md-mb-20">11910 Cairo Suite 210, Kafralshakh , Cairo, Egypt</p>

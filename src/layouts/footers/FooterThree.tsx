@@ -1,9 +1,9 @@
 "use client"
 import Image from "next/image"
+import SettledLogo from "@/components/common/SettledLogo";
 import Link from "next/link"
 import footer_data from "@/data/home-data/FooterData"
 
-import footerLogo from "@/assets/images/logo/logo_06.svg"
 import footerShape_1 from "@/assets/images/shape/shape_52.svg"
 
 const FooterThree = () => {
@@ -16,7 +16,7 @@ const FooterThree = () => {
                      <div className="footer-intro pe-xxl-5 pe-xl-3">
                         <div className="logo mb-15">
                            <Link href="/">
-                              <Image src={footerLogo} alt="" />
+                              <SettledLogo width={175} height={66} />
                            </Link>
                         </div>
                         <p className="mb-45 lg-mb-30">11910 Cairo Suite 210, Kafralshakh , Cairo, Egypt</p>
@@ -60,7 +60,7 @@ const FooterThree = () => {
                      <li><Link href="/faq">Privacy &amp; Terms</Link></li>
                      <li><Link href="/contact">Contact Us</Link></li>
                   </ul>
-                  <p className="mb-15 text-center text-lg-start fs-16 order-md-first">Copyright @2025 HOZN.</p>
+                  <p className="mb-15 text-center text-lg-start fs-16 order-md-first">Copyright @2026 Settled.</p>
                </div>
             </div>
          </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import SettledLogo from "@/components/common/SettledLogo";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import styles from "./SellerPortalPage.module.scss";
@@ -19,6 +20,16 @@ const actors: { value: JourneyActor; label: string }[] = [
   { value: "agent", label: "Agent view" },
   { value: "coordinator", label: "Concierge view" },
 ];
+
+const timelineFormatter = new Intl.DateTimeFormat("en-AU", {
+  dateStyle: "medium",
+  timeStyle: "short",
+  timeZone: "Australia/Brisbane",
+});
+
+function formatTimelineAt(value: string) {
+  return timelineFormatter.format(new Date(value));
+}
 
 async function requestTransition(
   journeyId: string,
@@ -137,6 +148,9 @@ export default function SellerPortalPage() {
       <div className={styles.container}>
         <section className={styles.hero}>
           <div>
+            <div className={styles.heroLogo}>
+              <SettledLogo priority width={250} height={125} />
+            </div>
             <div className={styles.eyebrow}>Settled Seller Concierge</div>
             <h1>Guide every seller from first enquiry to portal launch.</h1>
             <p>
@@ -317,10 +331,7 @@ export default function SellerPortalPage() {
                 {[...journey.timeline].reverse().map((entry) => (
                   <div key={`${entry.at}-${entry.to}`} className={styles.timelineItem}>
                     <span className={styles.timelineMeta}>
-                      {new Date(entry.at).toLocaleString("en-AU", {
-                        dateStyle: "medium",
-                        timeStyle: "short",
-                      })}{" "}
+                      {formatTimelineAt(entry.at)}{" "}
                       · {entry.actor}
                     </span>
                     <strong>{stateMeta[entry.to].label}</strong>

@@ -1,8 +1,7 @@
 import Image, { StaticImageData } from "next/image"
 import Fancybox from "@/components/common/Fancybox"
+import SettledLogo from "@/components/common/SettledLogo";
 import Link from "next/link"
-
-import offcanvasLogo from "@/assets/images/logo/logo_02.svg"
 
 import offcanvasThumb_1 from "@/assets/images/listing/img_69.jpg"
 import offcanvasThumb_2 from "@/assets/images/listing/img_70.jpg"
@@ -64,7 +63,7 @@ const Offcanvas = ({ offCanvas, setOffCanvas }: any) => {
             <div className="offcanvas-header">
                <div className="logo order-lg-0">
                   <Link href="/" className="d-flex align-items-center">
-                     <Image src={offcanvasLogo} alt="" />
+                     <SettledLogo priority width={165} height={62} />
                   </Link>
                </div>
                <button onClick={() => setOffCanvas(false)} type="button" className="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>

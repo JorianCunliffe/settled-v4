@@ -1,6 +1,6 @@
 import Image from "next/image"
+import SettledLogo from "@/components/common/SettledLogo";
 
-import footerLogo from "@/assets/images/logo/logo_06.svg"
 import footerShape from "@/assets/images/assets/ils_06.svg"
 import Link from "next/link"
 import footer_data from "@/data/home-data/FooterData"
@@ -15,7 +15,7 @@ const FooterFour = () => {
                      <div className="footer-intro">
                         <div className="logo mb-20">
                            <Link href="/">
-                              <Image src={footerLogo} alt="" />
+                              <SettledLogo width={175} height={66} />
                            </Link>
                         </div>
                         <p className="mb-30 xs-mb-20">11910 Cairo Suite 210, Kafralshakh , Cairo, Egypt</p>
@@ -42,7 +42,7 @@ const FooterFour = () => {
                </div>
             </div>
             <div className="bottom-footer">
-               <p className="m0 text-center fs-16">Copyright @2025 HOZN.</p>
+               <p className="m0 text-center fs-16">Copyright @2026 Settled.</p>
             </div>
          </div>
          <Image src={footerShape} alt="" className="lazy-img shapes shape_01" />

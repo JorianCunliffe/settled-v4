@@ -23,7 +23,10 @@ export default function RootLayout({
         <meta property="og:url" content="https://settled.vercel.app" />
         <meta property="og:type" content="website" />
         <meta property="og:title" content="Settled Seller Portal" />
-        <meta name='og:image' content='images/assets/ogg.png' />
+        <meta property="og:image" content="/assets/images/logo/settled-logo.png" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Settled Seller Portal" />
+        <meta name="twitter:image" content="/assets/images/logo/settled-logo.png" />
         {/* For IE  */}
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
         {/* For Resposive Device */}
@@ -35,7 +38,8 @@ export default function RootLayout({
         <meta name="msapplication-navbutton-color" content="#0D1A1C" />
         {/* iOS Safari */}
         <meta name="apple-mobile-web-app-status-bar-style" content="#0D1A1C" />
-        <link rel="icon" href="/favicon.png" sizes="any" />
+        <link rel="icon" href="/assets/images/logo/settled-logo.png" sizes="any" />
+        <link rel="apple-touch-icon" href="/assets/images/logo/settled-logo.png" />
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,500&display=swap" />
       </head>
       <body suppressHydrationWarning={true}>

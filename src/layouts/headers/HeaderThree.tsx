@@ -1,13 +1,11 @@
 "use client"
 import NavMenu from "./Menu/NavMenu"
+import SettledLogo from "@/components/common/SettledLogo";
 import Link from "next/link"
-import Image from "next/image"
 import { useState } from "react"
 import UseSticky from "@/hooks/UseSticky"
 import LoginModal from "@/modals/LoginModal"
 import Offcanvas from "./Menu/Offcanvas"
-
-import logo_1 from "@/assets/images/logo/logo_06.svg";
 
 const HeaderThree = () => {
    const { sticky } = UseSticky();
@@ -21,7 +19,7 @@ const HeaderThree = () => {
                   <div className="d-flex align-items-center">
                      <div className="logo order-lg-0">
                         <Link href="/" className="d-flex align-items-center">
-                           <Image src={logo_1} alt="" />
+                           <SettledLogo priority width={180} height={67} />
                         </Link>
                      </div>
 

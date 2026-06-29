@@ -1,8 +1,8 @@
 "use client"
 import Image from "next/image"
+import SettledLogo from "@/components/common/SettledLogo";
 import Link from "next/link"
 
-import footerLogo from "@/assets/images/logo/logo_07.svg"
 import footer_data from "@/data/home-data/FooterData"
 
 const FooterFive = () => {
@@ -39,7 +39,7 @@ const FooterFive = () => {
                      <div className="footer-intro">
                         <div className="logo mb-20">
                            <Link href="/">
-                              <Image src={footerLogo} alt="" />
+                              <SettledLogo width={175} height={66} />
                            </Link>
                         </div>
                         <p className="mb-45 md-mb-20">11910 Cairo Suite 210, Kafralshakh , Cairo, Egypt</p>
@@ -65,7 +65,7 @@ const FooterFive = () => {
                </div>
             </div>
             <div className="bottom-footer">
-               <p className="m0 text-center fs-16">Copyright @2025 HOZN.</p>
+               <p className="m0 text-center fs-16">Copyright @2026 Settled.</p>
             </div>
          </div>
       </div>

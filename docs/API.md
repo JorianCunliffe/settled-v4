@@ -13,6 +13,8 @@ Journey and listing APIs return:
 
 The app uses Postgres when one of `DATABASE_URL`, `POSTGRES_URL`, or `POSTGRES_PRISMA_URL` is set. Otherwise it uses in-memory data for the current server process.
 
+Seller journey document uploads additionally use [Vercel Blob](https://vercel.com/docs/storage/vercel-blob) when `BLOB_READ_WRITE_TOKEN` is set. Otherwise uploaded files are inlined as base64 `data:` URLs alongside the journey record (fine for demos, not for production-scale files).
+
 ## Auth
 
 ### POST `/api/auth/signup`
@@ -197,7 +199,8 @@ Success: `200`
     "currentState": "agent_matching",
     "timeline": [],
     "checklist": [],
-    "agentCandidates": []
+    "agentCandidates": [],
+    "documents": []
   },
   "persistence": "memory",
   "currentStateLabel": "Agent Matching",
@@ -252,6 +255,38 @@ Current normal transition rules:
 | `live_on_portals` | `agent` | `under_offer` |
 | `under_offer` | `agent` | `live_on_portals` |
 | `under_offer` | `coordinator` | `settled` |
+
+### POST `/api/seller-journey/documents`
+
+Uploads a document for the current journey stage. Request is `multipart/form-data`.
+
+Fields:
+
+- `journeyId` (optional, defaults to the seeded demo journey)
+- `actor`: one of `seller`, `agent`, `coordinator`
+- `state`: one of the valid journey states — the stage the document is attached to
+- `label`: the document label from that stage's guidance (e.g. `"Signed agency agreement"`)
+- `file`: the file to upload, up to 8MB
+
+Success: `200`
+
+```json
+{
+  "journey": { "...": "as returned by GET /api/seller-journey, now including documents" },
+  "persistence": "memory",
+  "configuredPersistence": "memory",
+  "documentStorage": "inline"
+}
+```
+
+`documentStorage` is `"blob"` when `BLOB_READ_WRITE_TOKEN` is configured, otherwise `"inline"`.
+
+Re-uploading the same `state`/`label` pair replaces the previous document.
+
+Errors:
+
+- `400` when `actor`, `state`, or `label` is missing/invalid, no file is provided, or the file exceeds 8MB.
+- `500` when the upload cannot be persisted.
 
 ## Admin seller journey
 

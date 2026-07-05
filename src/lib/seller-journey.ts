@@ -39,6 +39,16 @@ export interface AgentCandidate {
   rating: number;
 }
 
+export interface JourneyDocument {
+  id: string;
+  state: JourneyState;
+  label: string;
+  fileName: string;
+  url: string;
+  uploadedBy: JourneyActor;
+  uploadedAt: string;
+}
+
 export interface SellerJourney {
   id: string;
   propertyAddress: string;
@@ -48,6 +58,7 @@ export interface SellerJourney {
   timeline: TimelineEntry[];
   checklist: ChecklistItem[];
   agentCandidates: AgentCandidate[];
+  documents: JourneyDocument[];
 }
 
 export type JourneyPersistence = "database" | "memory";
@@ -328,6 +339,7 @@ export const sampleJourney: SellerJourney = {
       rating: 4.7,
     },
   ],
+  documents: [],
 };
 
 export function cloneSampleJourney(): SellerJourney {
@@ -338,6 +350,7 @@ export function cloneSampleJourney(): SellerJourney {
     agentCandidates: sampleJourney.agentCandidates.map((candidate) => ({
       ...candidate,
     })),
+    documents: sampleJourney.documents.map((document) => ({ ...document })),
   };
 }
 

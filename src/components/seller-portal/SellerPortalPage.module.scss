@@ -141,7 +141,6 @@
   background: rgba(21, 58, 53, 0.04);
   border: 1px solid rgba(21, 58, 53, 0.1);
   border-radius: 16px;
-  cursor: pointer;
   display: flex;
   gap: 12px;
   justify-content: space-between;
@@ -153,9 +152,18 @@
   font-size: 0.95rem;
 }
 
+.uploadItem > div {
+  display: grid;
+  gap: 4px;
+}
+
 .uploadDone {
   color: #23613e;
   font-size: 0.85rem;
+}
+
+.uploadDone a {
+  color: inherit;
 }
 
 .uploadPending {
@@ -163,10 +171,16 @@
   font-size: 0.85rem;
 }
 
+.uploadError {
+  color: #8b2e3a;
+  font-size: 0.85rem;
+}
+
 .uploadButton {
   background: #153a35;
   border-radius: 999px;
   color: #fff;
+  cursor: pointer;
   flex-shrink: 0;
   font-size: 0.85rem;
   font-weight: 700;

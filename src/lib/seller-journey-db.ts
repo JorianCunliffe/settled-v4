@@ -4,6 +4,7 @@ import {
   cloneSampleJourney,
   transitionJourney,
   type JourneyActor,
+  type JourneyDocument,
   type JourneyPersistence,
   type JourneyState,
   type SellerJourney,
@@ -25,6 +26,16 @@ type EventRow = {
   from_state: JourneyState | null;
   to_state: JourneyState;
   note: string;
+  created_at: Date | string;
+};
+
+type DocumentRow = {
+  id: string;
+  state: JourneyState;
+  label: string;
+  file_name: string;
+  url: string;
+  uploaded_by: JourneyActor;
   created_at: Date | string;
 };
 
@@ -75,6 +86,7 @@ function cloneJourney(journey: SellerJourney): SellerJourney {
     agentCandidates: journey.agentCandidates.map((candidate) => ({
       ...candidate,
     })),
+    documents: journey.documents.map((document) => ({ ...document })),
   };
 }
 
@@ -137,10 +149,27 @@ async function ensureSchema(client: PoolClient) {
     )
   `);
 
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS seller_journey_documents (
+      id TEXT PRIMARY KEY,
+      journey_id TEXT NOT NULL REFERENCES seller_journeys(id) ON DELETE CASCADE,
+      state TEXT NOT NULL,
+      label TEXT NOT NULL,
+      file_name TEXT NOT NULL,
+      url TEXT NOT NULL,
+      uploaded_by TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
   globalThis.sellerJourneySchemaReady = true;
 }
 
-function hydrateJourney(row: JourneyRow, events: EventRow[]): SellerJourney {
+function hydrateJourney(
+  row: JourneyRow,
+  events: EventRow[],
+  documents: DocumentRow[],
+): SellerJourney {
   return {
     id: row.id,
     propertyAddress: row.property_address,
@@ -158,6 +187,18 @@ function hydrateJourney(row: JourneyRow, events: EventRow[]): SellerJourney {
         event.created_at instanceof Date
           ? event.created_at.toISOString()
           : new Date(event.created_at).toISOString(),
+    })),
+    documents: documents.map((document) => ({
+      id: document.id,
+      state: document.state,
+      label: document.label,
+      fileName: document.file_name,
+      url: document.url,
+      uploadedBy: document.uploaded_by,
+      uploadedAt:
+        document.created_at instanceof Date
+          ? document.created_at.toISOString()
+          : new Date(document.created_at).toISOString(),
     })),
   };
 }
@@ -262,7 +303,17 @@ async function fetchJourneyById(
     [journeyId],
   );
 
-  return hydrateJourney(row, eventResult.rows);
+  const documentResult = await client.query<DocumentRow>(
+    `
+      SELECT id, state, label, file_name, url, uploaded_by, created_at
+      FROM seller_journey_documents
+      WHERE journey_id = $1
+      ORDER BY created_at ASC
+    `,
+    [journeyId],
+  );
+
+  return hydrateJourney(row, eventResult.rows, documentResult.rows);
 }
 
 export async function loadJourney(journeyId?: string): Promise<{
@@ -498,6 +549,118 @@ export async function setStoredJourneyState(params: {
     );
     await persistTimelineEntry(client, nextJourney.id, entry);
     await client.query("COMMIT");
+
+    return {
+      journey: nextJourney,
+      persistence: "database",
+    };
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+export async function addStoredJourneyDocument(params: {
+  journeyId?: string;
+  state: JourneyState;
+  label: string;
+  fileName: string;
+  url: string;
+  uploadedBy: JourneyActor;
+}): Promise<{
+  journey: SellerJourney;
+  persistence: JourneyPersistence;
+}> {
+  const pool = getPool();
+  const document: JourneyDocument = {
+    id: randomUUID(),
+    state: params.state,
+    label: params.label,
+    fileName: params.fileName,
+    url: params.url,
+    uploadedBy: params.uploadedBy,
+    uploadedAt: new Date().toISOString(),
+  };
+
+  if (!pool) {
+    const currentJourney = loadMemoryJourney(params.journeyId);
+    const nextJourney: SellerJourney = {
+      ...currentJourney,
+      documents: [
+        ...currentJourney.documents.filter(
+          (existing) => !(existing.state === document.state && existing.label === document.label),
+        ),
+        document,
+      ],
+    };
+
+    saveMemoryJourney(nextJourney);
+
+    return { journey: nextJourney, persistence: "memory" };
+  }
+
+  const client = await pool.connect();
+
+  try {
+    await ensureSchema(client);
+    await client.query("BEGIN");
+
+    const seededId = params.journeyId ?? cloneSampleJourney().id;
+    let currentJourney = await fetchJourneyById(client, seededId);
+
+    if (!currentJourney) {
+      await seedJourney(client);
+      currentJourney = await fetchJourneyById(client, cloneSampleJourney().id);
+    }
+
+    if (!currentJourney) {
+      throw new Error("Unable to load the seller journey.");
+    }
+
+    await client.query(
+      "DELETE FROM seller_journey_documents WHERE journey_id = $1 AND state = $2 AND label = $3",
+      [currentJourney.id, document.state, document.label],
+    );
+
+    await client.query(
+      `
+        INSERT INTO seller_journey_documents (
+          id,
+          journey_id,
+          state,
+          label,
+          file_name,
+          url,
+          uploaded_by,
+          created_at
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      `,
+      [
+        document.id,
+        currentJourney.id,
+        document.state,
+        document.label,
+        document.fileName,
+        document.url,
+        document.uploadedBy,
+        document.uploadedAt,
+      ],
+    );
+
+    await client.query("COMMIT");
+
+    const nextJourney: SellerJourney = {
+      ...currentJourney,
+      documents: [
+        ...currentJourney.documents.filter(
+          (existing) => !(existing.state === document.state && existing.label === document.label),
+        ),
+        document,
+      ],
+    };
 
     return {
       journey: nextJourney,

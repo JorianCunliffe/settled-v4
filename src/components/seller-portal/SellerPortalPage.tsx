@@ -131,7 +131,8 @@ export default function SellerPortalPage() {
   const [createdListingUrl, setCreatedListingUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [uploadedDocs, setUploadedDocs] = useState<Record<string, string>>({});
+  const [uploadingDoc, setUploadingDoc] = useState<string | null>(null);
+  const [docErrors, setDocErrors] = useState<Record<string, string>>({});
 
   const actions = getAvailableTransitions(journey.currentState, actor);
   const stageIndex = journeyStates.indexOf(journey.currentState);
@@ -231,8 +232,41 @@ export default function SellerPortalPage() {
     }
   };
 
-  const handleDocSelected = (docLabel: string, fileName: string) => {
-    setUploadedDocs((current) => ({ ...current, [`${journey.currentState}:${docLabel}`]: fileName }));
+  const handleDocSelected = async (docLabel: string, file: File) => {
+    const key = `${journey.currentState}:${docLabel}`;
+    setUploadingDoc(key);
+    setDocErrors((current) => ({ ...current, [key]: "" }));
+
+    try {
+      const body = new FormData();
+      body.append("journeyId", journey.id);
+      body.append("actor", actor);
+      body.append("state", journey.currentState);
+      body.append("label", docLabel);
+      body.append("file", file);
+
+      const response = await fetch("/api/seller-journey/documents", {
+        method: "POST",
+        body,
+      });
+
+      if (!response.ok) {
+        const payload = (await response.json()) as { message?: string };
+        throw new Error(payload.message ?? "Unable to upload document.");
+      }
+
+      const payload = (await response.json()) as {
+        journey: SellerJourney;
+        persistence: JourneyPersistence;
+      };
+      setJourney(payload.journey);
+      setPersistence(payload.persistence);
+    } catch (nextError) {
+      const message = nextError instanceof Error ? nextError.message : "Unable to upload document.";
+      setDocErrors((current) => ({ ...current, [key]: message }));
+    } finally {
+      setUploadingDoc(null);
+    }
   };
 
   const outstandingChecklist = journey.checklist.filter((item) => !item.done);
@@ -345,31 +379,45 @@ export default function SellerPortalPage() {
                   <div className={styles.uploadList}>
                     {currentMeta.documentsNeeded.map((doc) => {
                       const key = `${journey.currentState}:${doc}`;
-                      const fileName = uploadedDocs[key];
+                      const uploaded = journey.documents.find(
+                        (document) => document.state === journey.currentState && document.label === doc,
+                      );
+                      const isUploading = uploadingDoc === key;
+                      const docError = docErrors[key];
 
                       return (
-                        <label className={styles.uploadItem} key={doc}>
+                        <div className={styles.uploadItem} key={doc}>
                           <div>
                             <strong>{doc}</strong>
-                            {fileName ? (
-                              <span className={styles.uploadDone}>Uploaded: {fileName}</span>
+                            {uploaded ? (
+                              <span className={styles.uploadDone}>
+                                Uploaded:{" "}
+                                <a href={uploaded.url} rel="noreferrer" target="_blank">
+                                  {uploaded.fileName}
+                                </a>
+                              </span>
                             ) : (
                               <span className={styles.uploadPending}>Not uploaded yet</span>
                             )}
+                            {docError ? <span className={styles.uploadError}>{docError}</span> : null}
                           </div>
-                          <input
-                            accept="application/pdf,image/*"
-                            onChange={(event) => {
-                              const file = event.target.files?.[0];
-                              if (file) {
-                                handleDocSelected(doc, file.name);
-                              }
-                            }}
-                            style={{ display: "none" }}
-                            type="file"
-                          />
-                          <span className={styles.uploadButton}>{fileName ? "Replace" : "Upload"}</span>
-                        </label>
+                          <label className={styles.uploadButton}>
+                            {isUploading ? "Uploading..." : uploaded ? "Replace" : "Upload"}
+                            <input
+                              accept="application/pdf,image/*"
+                              disabled={isUploading}
+                              onChange={(event) => {
+                                const file = event.target.files?.[0];
+                                event.target.value = "";
+                                if (file) {
+                                  void handleDocSelected(doc, file);
+                                }
+                              }}
+                              style={{ display: "none" }}
+                              type="file"
+                            />
+                          </label>
+                        </div>
                       );
                     })}
                   </div>

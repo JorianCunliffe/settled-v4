@@ -56,12 +56,59 @@
   padding: 32px;
 }
 
+.statusNav {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.statusNavButton {
+  background: transparent;
+  border: 0;
+  color: #153a35;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 6px 4px;
+}
+
+.statusNavButton:disabled {
+  color: #a8b2ac;
+  cursor: not-allowed;
+}
+
 .statusStageLabel {
   color: #8b5a20;
   font-size: 0.86rem;
   font-weight: 700;
   letter-spacing: 0.08em;
+  text-align: center;
   text-transform: uppercase;
+}
+
+.previewNotice {
+  align-items: center;
+  background: rgba(219, 179, 94, 0.14);
+  border-radius: 16px;
+  color: #5b4c12;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 14px 16px;
+}
+
+.previewReturn {
+  background: #153a35;
+  border: 0;
+  border-radius: 999px;
+  color: #fff;
+  cursor: pointer;
+  flex-shrink: 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 8px 14px;
 }
 
 .progressBar {
@@ -423,6 +470,178 @@
   color: #153a35;
 }
 
+.panelSubtitle {
+  color: #55635d;
+  font-size: 0.9rem;
+  margin: -6px 0 16px;
+}
+
+.resourceList,
+.serviceList {
+  display: grid;
+  gap: 12px;
+}
+
+.resourceItem,
+.serviceItem {
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(22, 33, 29, 0.08);
+  border-radius: 16px;
+  padding: 16px;
+}
+
+.resourceItem strong,
+.serviceItem strong {
+  display: block;
+  font-size: 0.98rem;
+  margin-bottom: 4px;
+}
+
+.resourceItem p,
+.serviceItem p {
+  color: #516059;
+  margin: 0;
+}
+
+.resourceMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.resourceType,
+.resourceDuration,
+.resourceAudience,
+.serviceCategory {
+  background: rgba(21, 58, 53, 0.08);
+  border-radius: 999px;
+  color: #153a35;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  text-transform: uppercase;
+}
+
+.serviceTop {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.serviceCost {
+  color: #8b5a20;
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-top: 8px;
+}
+
+.chatWidget {
+  bottom: 24px;
+  position: fixed;
+  right: 24px;
+  z-index: 40;
+}
+
+.chatToggle {
+  background: #153a35;
+  border: 0;
+  border-radius: 999px;
+  box-shadow: 0 14px 30px rgba(21, 58, 53, 0.3);
+  color: #fff;
+  cursor: pointer;
+  font-size: 0.92rem;
+  font-weight: 700;
+  padding: 14px 20px;
+}
+
+.chatPanel {
+  background: #fffaf4;
+  border: 1px solid rgba(22, 33, 29, 0.1);
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(36, 39, 33, 0.24);
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  height: 420px;
+  margin-bottom: 14px;
+  overflow: hidden;
+  width: min(340px, calc(100vw - 48px));
+}
+
+.chatHeader {
+  align-items: center;
+  background: #153a35;
+  color: #fff;
+  display: flex;
+  justify-content: space-between;
+  padding: 14px 16px;
+}
+
+.chatClose {
+  background: transparent;
+  border: 0;
+  color: #fff;
+  cursor: pointer;
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.chatMessages {
+  display: grid;
+  gap: 10px;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.chatMessage {
+  border-radius: 14px;
+  font-size: 0.88rem;
+  line-height: 1.4;
+  max-width: 85%;
+  padding: 10px 12px;
+}
+
+.chatMessageAssistant {
+  background: rgba(21, 58, 53, 0.08);
+  color: #16211d;
+  justify-self: start;
+}
+
+.chatMessageUser {
+  background: #153a35;
+  color: #fff;
+  justify-self: end;
+}
+
+.chatForm {
+  border-top: 1px solid rgba(22, 33, 29, 0.08);
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+}
+
+.chatInput {
+  background: #fff;
+  border: 1px solid rgba(22, 33, 29, 0.15);
+  border-radius: 999px;
+  flex: 1;
+  font: inherit;
+  padding: 10px 14px;
+}
+
+.chatSend {
+  background: #153a35;
+  border: 0;
+  border-radius: 999px;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 700;
+  padding: 10px 16px;
+}
+
 @media (max-width: 640px) {
   .topBar {
     flex-direction: column;
@@ -432,5 +651,10 @@
   .uploadItem {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .previewNotice {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }

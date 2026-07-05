@@ -2,13 +2,14 @@
 
 import SettledLogo from "@/components/common/SettledLogo";
 import Link from "next/link";
-import { type ReactNode, useEffect, useState } from "react";
+import { type FormEvent, type ReactNode, useEffect, useState } from "react";
 import styles from "./SellerPortalPage.module.scss";
 import {
   cloneSampleJourney,
   getAvailableTransitions,
   journeyStates,
   stateMeta,
+  type HelpResourceType,
   type JourneyPersistence,
   type JourneyActor,
   type JourneyState,
@@ -122,6 +123,104 @@ function Disclosure({
   );
 }
 
+const resourceTypeLabel: Record<HelpResourceType, string> = {
+  video: "Video",
+  article: "Article",
+  guide: "Guide",
+};
+
+interface ChatMessage {
+  id: string;
+  from: "assistant" | "user";
+  text: string;
+}
+
+const initialChatMessages: ChatMessage[] = [
+  {
+    id: "welcome",
+    from: "assistant",
+    text: "Hi, I'm the Settled Assistant. Ask me anything about your current step — full AI-powered answers are coming soon.",
+  },
+];
+
+function ChatBot() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [messages, setMessages] = useState<ChatMessage[]>(initialChatMessages);
+  const [draft, setDraft] = useState("");
+
+  const handleSubmit = (event: FormEvent) => {
+    event.preventDefault();
+
+    const text = draft.trim();
+    if (!text) {
+      return;
+    }
+
+    setMessages((current) => [
+      ...current,
+      { id: `user-${Date.now()}`, from: "user", text },
+      {
+        id: `assistant-${Date.now()}`,
+        from: "assistant",
+        text: "Thanks for the message! Live AI answers aren't wired up yet — in the meantime, check the help resources for this step or ask your agent directly.",
+      },
+    ]);
+    setDraft("");
+  };
+
+  return (
+    <div className={styles.chatWidget}>
+      {isOpen ? (
+        <div className={styles.chatPanel}>
+          <div className={styles.chatHeader}>
+            <strong>Settled Assistant</strong>
+            <button
+              aria-label="Close chat"
+              className={styles.chatClose}
+              onClick={() => setIsOpen(false)}
+              type="button"
+            >
+              ×
+            </button>
+          </div>
+          <div className={styles.chatMessages}>
+            {messages.map((message) => (
+              <div
+                className={`${styles.chatMessage} ${
+                  message.from === "user" ? styles.chatMessageUser : styles.chatMessageAssistant
+                }`}
+                key={message.id}
+              >
+                {message.text}
+              </div>
+            ))}
+          </div>
+          <form className={styles.chatForm} onSubmit={handleSubmit}>
+            <input
+              className={styles.chatInput}
+              onChange={(event) => setDraft(event.target.value)}
+              placeholder="Ask a question..."
+              type="text"
+              value={draft}
+            />
+            <button className={styles.chatSend} type="submit">
+              Send
+            </button>
+          </form>
+        </div>
+      ) : null}
+
+      <button
+        className={styles.chatToggle}
+        onClick={() => setIsOpen((value) => !value)}
+        type="button"
+      >
+        {isOpen ? "Close chat" : "Chat with us"}
+      </button>
+    </div>
+  );
+}
+
 export default function SellerPortalPage() {
   const [journey, setJourney] = useState<SellerJourney>(cloneSampleJourney);
   const [persistence, setPersistence] = useState<JourneyPersistence>("memory");
@@ -133,13 +232,25 @@ export default function SellerPortalPage() {
   const [error, setError] = useState<string | null>(null);
   const [uploadingDoc, setUploadingDoc] = useState<string | null>(null);
   const [docErrors, setDocErrors] = useState<Record<string, string>>({});
+  const [viewState, setViewState] = useState<JourneyState>(journey.currentState);
 
   const actions = getAvailableTransitions(journey.currentState, actor);
-  const stageIndex = journeyStates.indexOf(journey.currentState);
   const totalStages = journeyStates.length;
   const currentMeta = stateMeta[journey.currentState];
-  const previousState = stageIndex > 0 ? journeyStates[stageIndex - 1] : null;
-  const nextState = stageIndex < totalStages - 1 ? journeyStates[stageIndex + 1] : null;
+
+  const viewIndex = journeyStates.indexOf(viewState);
+  const viewMeta = stateMeta[viewState];
+  const isViewingCurrent = viewState === journey.currentState;
+  const canViewPrevious = viewIndex > 0;
+  const canViewNext = viewIndex < totalStages - 1;
+
+  const visibleResources = viewMeta.helpResources.filter(
+    (resource) => actor === "coordinator" || resource.audience === "both" || resource.audience === actor,
+  );
+
+  useEffect(() => {
+    setViewState(journey.currentState);
+  }, [journey.currentState]);
 
   useEffect(() => {
     let isMounted = true;
@@ -300,67 +411,101 @@ export default function SellerPortalPage() {
           <p className={styles.loadingNote}>Loading your sale plan...</p>
         ) : (
           <>
-            <section className={styles.statusHero} style={{ borderTopColor: currentMeta.accent }}>
-              <div className={styles.statusStageLabel}>
-                Step {stageIndex + 1} of {totalStages}
+            <section className={styles.statusHero} style={{ borderTopColor: viewMeta.accent }}>
+              <div className={styles.statusNav}>
+                <button
+                  className={styles.statusNavButton}
+                  disabled={!canViewPrevious}
+                  onClick={() => setViewState(journeyStates[viewIndex - 1])}
+                  type="button"
+                >
+                  ‹ Previous step
+                </button>
+                <div className={styles.statusStageLabel}>
+                  Step {viewIndex + 1} of {totalStages}
+                </div>
+                <button
+                  className={styles.statusNavButton}
+                  disabled={!canViewNext}
+                  onClick={() => setViewState(journeyStates[viewIndex + 1])}
+                  type="button"
+                >
+                  Next step ›
+                </button>
               </div>
               <div className={styles.progressBar}>
                 <div
                   className={styles.progressBarFill}
                   style={{
-                    width: `${((stageIndex + 1) / totalStages) * 100}%`,
-                    background: currentMeta.accent,
+                    width: `${((viewIndex + 1) / totalStages) * 100}%`,
+                    background: viewMeta.accent,
                   }}
                 />
               </div>
-              <h1>{currentMeta.label}</h1>
-              <p className={styles.statusExplainer}>{currentMeta.whatHappensNow}</p>
+              <h1>{viewMeta.label}</h1>
+              <p className={styles.statusExplainer}>{viewMeta.whatHappensNow}</p>
 
-              <div className={styles.actions}>
-                {actions.length > 0 ? (
-                  actions.map((action) => (
+              {isViewingCurrent ? (
+                <div className={styles.actions}>
+                  {actions.length > 0 ? (
+                    actions.map((action) => (
+                      <button
+                        key={`${actor}-${action.to}`}
+                        className={styles.actionButton}
+                        disabled={isSubmitting}
+                        onClick={() => handleAction(action.to)}
+                        type="button"
+                      >
+                        <strong>{action.label}</strong>
+                        <br />
+                        {action.detail}
+                      </button>
+                    ))
+                  ) : (
+                    <button className={styles.ghostButton} disabled type="button">
+                      No actions available for the {actor} role at this stage.
+                    </button>
+                  )}
+
+                  {journey.currentState === "ready_for_listing" ||
+                  journey.currentState === "live_on_portals" ? (
                     <button
-                      key={`${actor}-${action.to}`}
                       className={styles.actionButton}
-                      disabled={isSubmitting}
-                      onClick={() => handleAction(action.to)}
+                      disabled={isCreatingListing}
+                      onClick={handleCreateListing}
                       type="button"
                     >
-                      <strong>{action.label}</strong>
+                      <strong>
+                        {isCreatingListing ? "Creating listing..." : "Create frontend listing"}
+                      </strong>
                       <br />
-                      {action.detail}
+                      Generate a real public listing from this seller journey.
                     </button>
-                  ))
-                ) : (
-                  <button className={styles.ghostButton} disabled type="button">
-                    No actions available for the {actor} role at this stage.
-                  </button>
-                )}
+                  ) : null}
 
-                {journey.currentState === "ready_for_listing" ||
-                journey.currentState === "live_on_portals" ? (
+                  {createdListingUrl ? (
+                    <Link className={styles.actionButton} href={createdListingUrl}>
+                      <strong>View created listing</strong>
+                      <br />
+                      Open the public listing detail page.
+                    </Link>
+                  ) : null}
+                </div>
+              ) : (
+                <div className={styles.previewNotice}>
+                  <span>
+                    You&apos;re previewing the <strong>{viewMeta.label}</strong> step. Actions and uploads
+                    are only available on your current step.
+                  </span>
                   <button
-                    className={styles.actionButton}
-                    disabled={isCreatingListing}
-                    onClick={handleCreateListing}
+                    className={styles.previewReturn}
+                    onClick={() => setViewState(journey.currentState)}
                     type="button"
                   >
-                    <strong>
-                      {isCreatingListing ? "Creating listing..." : "Create frontend listing"}
-                    </strong>
-                    <br />
-                    Generate a real public listing from this seller journey.
+                    Return to current step
                   </button>
-                ) : null}
-
-                {createdListingUrl ? (
-                  <Link className={styles.actionButton} href={createdListingUrl}>
-                    <strong>View created listing</strong>
-                    <br />
-                    Open the public listing detail page.
-                  </Link>
-                ) : null}
-              </div>
+                </div>
+              )}
 
               {error ? <p className={styles.errorNote}>{error}</p> : null}
             </section>
@@ -368,22 +513,37 @@ export default function SellerPortalPage() {
             <section className={styles.panel}>
               <h2>What you need to do to proceed</h2>
               <ul className={styles.doList}>
-                {currentMeta.whatYouNeedToDo.map((item) => (
+                {viewMeta.whatYouNeedToDo.map((item) => (
                   <li key={item}>{item}</li>
                 ))}
               </ul>
 
-              {currentMeta.documentsNeeded.length > 0 ? (
+              {viewMeta.documentsNeeded.length > 0 ? (
                 <>
                   <h3 className={styles.subheading}>Documents to upload</h3>
                   <div className={styles.uploadList}>
-                    {currentMeta.documentsNeeded.map((doc) => {
-                      const key = `${journey.currentState}:${doc}`;
+                    {viewMeta.documentsNeeded.map((doc) => {
+                      const key = `${viewState}:${doc}`;
                       const uploaded = journey.documents.find(
-                        (document) => document.state === journey.currentState && document.label === doc,
+                        (document) => document.state === viewState && document.label === doc,
                       );
                       const isUploading = uploadingDoc === key;
                       const docError = docErrors[key];
+
+                      if (!isViewingCurrent) {
+                        return (
+                          <div className={styles.uploadItem} key={doc}>
+                            <div>
+                              <strong>{doc}</strong>
+                              {uploaded ? (
+                                <span className={styles.uploadDone}>Uploaded: {uploaded.fileName}</span>
+                              ) : (
+                                <span className={styles.uploadPending}>Not uploaded yet</span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      }
 
                       return (
                         <div className={styles.uploadItem} key={doc}>
@@ -424,7 +584,7 @@ export default function SellerPortalPage() {
                 </>
               ) : null}
 
-              {outstandingChecklist.length > 0 ? (
+              {isViewingCurrent && outstandingChecklist.length > 0 ? (
                 <>
                   <h3 className={styles.subheading}>Open tasks</h3>
                   <div className={styles.checklist}>
@@ -442,27 +602,63 @@ export default function SellerPortalPage() {
               ) : null}
 
               <p className={styles.tipCallout}>
-                <strong>Tip:</strong> {currentMeta.helpTip}
+                <strong>Tip:</strong> {viewMeta.helpTip}
               </p>
             </section>
 
+            <section className={styles.panel}>
+              <h2>Help resources for this step</h2>
+              {visibleResources.length > 0 ? (
+                <div className={styles.resourceList}>
+                  {visibleResources.map((resource) => (
+                    <div className={styles.resourceItem} key={resource.id}>
+                      <div className={styles.resourceMeta}>
+                        <span className={styles.resourceType}>{resourceTypeLabel[resource.type]}</span>
+                        {resource.durationMinutes ? (
+                          <span className={styles.resourceDuration}>{resource.durationMinutes} min</span>
+                        ) : null}
+                        <span className={styles.resourceAudience}>
+                          {resource.audience === "both"
+                            ? "For everyone"
+                            : resource.audience === "agent"
+                              ? "For agents"
+                              : "For sellers"}
+                        </span>
+                      </div>
+                      <strong>{resource.title}</strong>
+                      <p>{resource.description}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className={styles.footerNote}>No help resources for this step yet.</p>
+              )}
+            </section>
+
+            <section className={styles.panel}>
+              <h2>Associated services</h2>
+              <p className={styles.panelSubtitle}>
+                Agents: offer these when relevant. Sellers: ask your agent if any of these would help.
+              </p>
+              {viewMeta.associatedServices.length > 0 ? (
+                <div className={styles.serviceList}>
+                  {viewMeta.associatedServices.map((service) => (
+                    <div className={styles.serviceItem} key={service.id}>
+                      <div className={styles.serviceTop}>
+                        <strong>{service.name}</strong>
+                        <span className={styles.serviceCategory}>{service.category}</span>
+                      </div>
+                      <p>{service.description}</p>
+                      <span className={styles.serviceCost}>{service.typicalCost}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className={styles.footerNote}>No associated services for this step.</p>
+              )}
+            </section>
+
             <section className={styles.stack}>
-              <Disclosure title="Previous step" subtitle={previousState ? stateMeta[previousState].label : "None"}>
-                {previousState ? (
-                  <p>{stateMeta[previousState].summary}</p>
-                ) : (
-                  <p>This is the first step in the journey.</p>
-                )}
-              </Disclosure>
-
-              <Disclosure title="Next step" subtitle={nextState ? stateMeta[nextState].label : "None"}>
-                {nextState ? (
-                  <p>{stateMeta[nextState].summary}</p>
-                ) : (
-                  <p>This is the final step in the journey.</p>
-                )}
-              </Disclosure>
-
               <Disclosure title="Full journey map" subtitle={`${totalStages} stages`}>
                 <div className={styles.stateRail}>
                   {journeyStates.map((state) => {
@@ -542,6 +738,7 @@ export default function SellerPortalPage() {
           </>
         )}
       </div>
+      <ChatBot />
     </main>
   );
 }

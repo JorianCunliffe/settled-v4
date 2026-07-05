@@ -63,6 +63,26 @@ export interface SellerJourney {
 
 export type JourneyPersistence = "database" | "memory";
 
+export type HelpResourceAudience = "seller" | "agent" | "both";
+export type HelpResourceType = "video" | "article" | "guide";
+
+export interface HelpResource {
+  id: string;
+  title: string;
+  type: HelpResourceType;
+  audience: HelpResourceAudience;
+  description: string;
+  durationMinutes?: number;
+}
+
+export interface AssociatedService {
+  id: string;
+  name: string;
+  category: string;
+  description: string;
+  typicalCost: string;
+}
+
 export interface StageMeta {
   label: string;
   summary: string;
@@ -75,6 +95,10 @@ export interface StageMeta {
   documentsNeeded: string[];
   /** A short, reassuring tip or answer to a common question at this stage. */
   helpTip: string;
+  /** Videos, articles, and guides relevant to this stage, tagged by intended audience. */
+  helpResources: HelpResource[];
+  /** Add-on services an agent can offer, or a seller can ask about, at this stage. */
+  associatedServices: AssociatedService[];
 }
 
 export const stateMeta: Record<JourneyState, StageMeta> = {
@@ -95,6 +119,40 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
     ],
     helpTip:
       "Not sure about pricing yet? A rough range is fine — your agent will help refine it during preparation.",
+    helpResources: [
+      {
+        id: "intake-agent-compliance",
+        title: "Running a compliant intake call",
+        type: "video",
+        audience: "agent",
+        durationMinutes: 4,
+        description:
+          "Required disclosures, note-taking, and CRM record keeping for a new seller intake, so the file is audit-ready from day one.",
+      },
+      {
+        id: "intake-seller-expect",
+        title: "What to expect during intake",
+        type: "article",
+        audience: "both",
+        description: "A short guide to the information we ask for at this stage and why it speeds up matching.",
+      },
+    ],
+    associatedServices: [
+      {
+        id: "svc-valuation",
+        name: "Independent property valuation",
+        category: "Valuation",
+        description: "A formal valuation to sanity-check the seller's target price range before agent matching.",
+        typicalCost: "$300 - $600",
+      },
+      {
+        id: "svc-legal-pack",
+        name: "Pre-sale legal pack",
+        category: "Legal",
+        description: "Title search and contract preparation started early so it's ready once an agent is appointed.",
+        typicalCost: "$400 - $800",
+      },
+    ],
   },
   agent_matching: {
     label: "Agent Matching",
@@ -110,6 +168,33 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
     documentsNeeded: [],
     helpTip:
       "Look for agents with strong recent sales in your suburb and a communication style that suits you.",
+    helpResources: [
+      {
+        id: "matching-agent-disclosure",
+        title: "Presenting a shortlist the right way",
+        type: "video",
+        audience: "agent",
+        durationMinutes: 5,
+        description:
+          "Fee transparency, conflict-of-interest disclosure, and how to present comparative market data fairly.",
+      },
+      {
+        id: "matching-seller-compare",
+        title: "How to compare agents",
+        type: "article",
+        audience: "both",
+        description: "Questions worth asking in an agent interview, and what strong local performance looks like.",
+      },
+    ],
+    associatedServices: [
+      {
+        id: "svc-cma",
+        name: "Comparative market analysis",
+        category: "Research",
+        description: "A detailed report on recent comparable sales, prepared by the shortlisted agents.",
+        typicalCost: "Usually free with a listing",
+      },
+    ],
   },
   agent_appointed: {
     label: "Agent Appointed",
@@ -124,6 +209,40 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
     documentsNeeded: ["Signed agency agreement", "Photo ID for contract verification"],
     helpTip:
       "Your agent will walk you through the agreement — ask about commission, marketing spend, and campaign length before signing.",
+    helpResources: [
+      {
+        id: "appointed-agent-agreement",
+        title: "Agency agreements: what must be disclosed",
+        type: "video",
+        audience: "agent",
+        durationMinutes: 6,
+        description:
+          "Cooling-off periods, commission disclosure, and the property information statements required in your state before signing.",
+      },
+      {
+        id: "appointed-seller-agreement",
+        title: "Understanding your agency agreement",
+        type: "article",
+        audience: "both",
+        description: "Plain-language walkthrough of the clauses sellers ask about most: commission, term, and exit.",
+      },
+    ],
+    associatedServices: [
+      {
+        id: "svc-marketing-upgrade",
+        name: "Marketing package upgrade",
+        category: "Marketing",
+        description: "Premium portal placement, print collateral, and social campaign add-ons for the agreement.",
+        typicalCost: "$800 - $2,500",
+      },
+      {
+        id: "svc-photography",
+        name: "Professional photography",
+        category: "Media",
+        description: "Licensed photographer booking bundled into the marketing plan.",
+        typicalCost: "$350 - $600",
+      },
+    ],
   },
   prep_in_progress: {
     label: "Sale Preparation",
@@ -143,6 +262,47 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
     ],
     helpTip:
       "This is the stage where small presentation improvements tend to have the biggest impact on buyer interest.",
+    helpResources: [
+      {
+        id: "prep-agent-compliance",
+        title: "Running a compliant campaign prep",
+        type: "video",
+        audience: "agent",
+        durationMinutes: 7,
+        description:
+          "Underquoting law, photography and access consent, and keeping a clean paper trail before you go live.",
+      },
+      {
+        id: "prep-seller-ready",
+        title: "Getting your home ready to list",
+        type: "article",
+        audience: "both",
+        description: "A practical checklist for styling, minor repairs, and what buyers notice first.",
+      },
+    ],
+    associatedServices: [
+      {
+        id: "svc-styling",
+        name: "Styling / home staging",
+        category: "Presentation",
+        description: "Furniture and styling hire to present the property at its best for photography and inspections.",
+        typicalCost: "$1,500 - $4,000",
+      },
+      {
+        id: "svc-inspection",
+        name: "Pre-sale building & pest inspection",
+        category: "Inspection",
+        description: "An upfront report so surprises don't stall negotiations later.",
+        typicalCost: "$400 - $700",
+      },
+      {
+        id: "svc-repairs",
+        name: "Minor repairs & handyman",
+        category: "Trades",
+        description: "Small fixes — touch-up paint, loose fittings, garden tidy — before photography day.",
+        typicalCost: "Varies by scope",
+      },
+    ],
   },
   ready_for_listing: {
     label: "Ready To List",
@@ -157,6 +317,39 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
     documentsNeeded: [],
     helpTip:
       "Once live, your listing syncs automatically across connected portals — no manual re-entry needed.",
+    helpResources: [
+      {
+        id: "ready-agent-check",
+        title: "Pre-launch compliance check",
+        type: "video",
+        audience: "agent",
+        durationMinutes: 3,
+        description: "Final price guide accuracy check and confirming disclosure documents are attached before launch.",
+      },
+      {
+        id: "ready-seller-signoff",
+        title: "Final sign-off checklist explained",
+        type: "article",
+        audience: "both",
+        description: "What you're approving in the final review, and how to request a last-minute change.",
+      },
+    ],
+    associatedServices: [
+      {
+        id: "svc-portal-upgrade",
+        name: "Premium portal placement",
+        category: "Marketing",
+        description: "Featured or highlighted placement on major listing portals for launch week.",
+        typicalCost: "$300 - $900",
+      },
+      {
+        id: "svc-signboard",
+        name: "Signboard & print collateral",
+        category: "Marketing",
+        description: "Street signage and printed brochures for inspections.",
+        typicalCost: "$150 - $400",
+      },
+    ],
   },
   live_on_portals: {
     label: "Live On Portals",
@@ -171,6 +364,40 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
     documentsNeeded: [],
     helpTip:
       "Ask your agent for a weekly campaign report so you can track enquiry volume and buyer sentiment.",
+    helpResources: [
+      {
+        id: "live-agent-offers",
+        title: "Handling enquiries and offers by the book",
+        type: "video",
+        audience: "agent",
+        durationMinutes: 6,
+        description:
+          "Fair trading obligations for presenting all offers to the seller and keeping a compliant record of enquiries.",
+      },
+      {
+        id: "live-seller-expect",
+        title: "What happens once you're live",
+        type: "article",
+        audience: "both",
+        description: "How inspections, enquiries, and feedback typically flow during an active campaign.",
+      },
+    ],
+    associatedServices: [
+      {
+        id: "svc-social-boost",
+        name: "Social media campaign boost",
+        category: "Marketing",
+        description: "Paid social promotion to extend reach beyond the portals during the live campaign.",
+        typicalCost: "$200 - $600",
+      },
+      {
+        id: "svc-drone",
+        name: "Virtual tour / drone video",
+        category: "Media",
+        description: "A walkthrough video or aerial footage to support online listings.",
+        typicalCost: "$400 - $900",
+      },
+    ],
   },
   under_offer: {
     label: "Under Offer",
@@ -185,6 +412,40 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
     ],
     documentsNeeded: ["Signed contract of sale (once accepted)", "Solicitor or conveyancer details"],
     helpTip: "If the offer falls through, the campaign can return to market at any time — nothing is lost.",
+    helpResources: [
+      {
+        id: "offer-agent-conditions",
+        title: "Managing offers and contract conditions compliantly",
+        type: "video",
+        audience: "agent",
+        durationMinutes: 8,
+        description:
+          "Cooling-off periods, special conditions, and finance clauses — what to check before a contract is signed.",
+      },
+      {
+        id: "offer-seller-process",
+        title: "Understanding the offer and contract process",
+        type: "article",
+        audience: "both",
+        description: "What each contract condition means and typical timeframes to settlement.",
+      },
+    ],
+    associatedServices: [
+      {
+        id: "svc-conveyancing",
+        name: "Conveyancing / settlement agent",
+        category: "Legal",
+        description: "Manages the legal transfer of ownership through to settlement.",
+        typicalCost: "$800 - $1,500",
+      },
+      {
+        id: "svc-compliance-cert",
+        name: "Building compliance certificate",
+        category: "Legal",
+        description: "Certificate confirming any structures on the property meet approval requirements.",
+        typicalCost: "$200 - $500",
+      },
+    ],
   },
   settled: {
     label: "Settled",
@@ -195,6 +456,39 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
     whatYouNeedToDo: ["Confirm receipt of settlement funds", "Hand over keys and property access"],
     documentsNeeded: [],
     helpTip: "You can revisit your full activity history any time from this page.",
+    helpResources: [
+      {
+        id: "settled-agent-records",
+        title: "Post-settlement compliance and record retention",
+        type: "video",
+        audience: "agent",
+        durationMinutes: 3,
+        description: "What must be retained on file after settlement and for how long, per your state's requirements.",
+      },
+      {
+        id: "settled-seller-next",
+        title: "What happens after settlement",
+        type: "article",
+        audience: "both",
+        description: "Key hand-over steps: keys, utilities, and final funds disbursement.",
+      },
+    ],
+    associatedServices: [
+      {
+        id: "svc-removalist",
+        name: "Moving & removalist referral",
+        category: "Moving",
+        description: "Vetted removalist partners for moving day.",
+        typicalCost: "Quoted directly by provider",
+      },
+      {
+        id: "svc-utilities",
+        name: "Utility connection concierge",
+        category: "Moving",
+        description: "Free service to transfer or disconnect electricity, gas, and internet.",
+        typicalCost: "Free",
+      },
+    ],
   },
 };
 

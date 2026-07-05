@@ -28,7 +28,7 @@ const LoginForm = () => {
 
    const onSubmit = async (data: FormData) => {
       try {
-         const response = await fetch("http://localhost:5000/api/auth/login", { 
+         const response = await fetch("/api/auth/login", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(data),
@@ -37,11 +37,12 @@ const LoginForm = () => {
          const result = await response.json();
 
          if (response.ok) {
+            window.localStorage.setItem("token", result.token);
             toast.success("Login successfully", { position: "top-center" });
             reset();
             router.push("/dashboard/dashboard-index"); 
          } else {
-            toast.error(result.message || "Invalid email or password");
+            toast.error(result.error || result.message || "Invalid email or password");
          }
       } catch (error) {
          toast.error("An error occurred. Please try again.");

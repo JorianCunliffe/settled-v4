@@ -31,7 +31,7 @@ const ProfileBody = () => {
 
       const fetchUserData = async () => {
          try {
-            const res = await fetch("http://localhost:5000/api/profile", {
+            const res = await fetch("/api/profile", {
                headers: {
                   Authorization: `Bearer ${token}`,
                },
@@ -58,7 +58,7 @@ const ProfileBody = () => {
 
    const handleSave = async () => {
       try {
-         const res = await fetch("http://localhost:5000/api/profile", {
+         const res = await fetch("/api/profile", {
             method: "PUT",
             headers: {
                "Content-Type": "application/json",
@@ -77,6 +77,13 @@ const ProfileBody = () => {
             throw new Error(errorData.error || "Failed to update profile");
          }
 
+         const payload = await res.json();
+         setName(payload.user.name);
+         setEmail(payload.user.email);
+         setFirstName(payload.user.firstName || "");
+         setLastName(payload.user.lastName || "");
+         setPhoneNumber(payload.user.phoneNumber || "");
+         setAbout(payload.user.about || "");
          alert("Profile updated successfully!");
       } catch (error) {
          console.error("Error updating profile:", error);

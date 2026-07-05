@@ -11,8 +11,6 @@ interface DataType {
 
 const UseShortedProperty = ({ itemsPerPage, page }: DataType) => {
 
-   let all_property = listing_data;
-
    const { properties, setProperties } = UseProperty();
    const filteredProperties = properties.filter((item) => item.page === page);
 
@@ -139,8 +137,7 @@ const UseShortedProperty = ({ itemsPerPage, page }: DataType) => {
    };
 
    // All products
-   const allProperties = useSelector(selectProperties);
-   const filteredAllProduct = allProperties.filter(item => item.page === "listing_1");
+   const filteredAllProduct = properties.filter(item => item.page === "listing_1");
 
    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
       const searchingProducts = filteredAllProduct.filter((p) =>
@@ -150,13 +147,13 @@ const UseShortedProperty = ({ itemsPerPage, page }: DataType) => {
    };
 
    // handle Price
-   const maxPrice = all_property.filter(item => item.page === page).reduce((max, item) => {
+   const maxPrice = properties.filter(item => item.page === page).reduce((max, item) => {
       return item.price > max ? item.price : max;
    }, 0);
    const [priceValue, setPriceValue] = useState([0, maxPrice]);
 
    useEffect(() => {
-      let filterPrice = all_property.filter((j) => j.price >= priceValue[0] && j.price <= priceValue[1]);
+      let filterPrice = properties.filter((j) => j.price >= priceValue[0] && j.price <= priceValue[1]);
       setProperties(filterPrice)
    }, [priceValue]);
 

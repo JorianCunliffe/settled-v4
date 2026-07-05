@@ -1,120 +1,263 @@
-import Image, { StaticImageData } from "next/image"
-import Link from "next/link"
+"use client"
+
+import Image from "next/image"
+import { ChangeEvent, useEffect, useState } from "react"
 
 import icon_1 from "@/assets/images/dashboard/icon/icon_18.svg";
-import icon_2 from "@/assets/images/dashboard/icon/icon_19.svg";
 import icon_3 from "@/assets/images/dashboard/icon/icon_20.svg";
 import icon_4 from "@/assets/images/dashboard/icon/icon_21.svg";
 
-import listImg_1 from "@/assets/images/dashboard/img_01.jpg";
-import listImg_2 from "@/assets/images/dashboard/img_02.jpg";
-import listImg_3 from "@/assets/images/dashboard/img_03.jpg";
-import listImg_4 from "@/assets/images/dashboard/img_04.jpg";
-import listImg_5 from "@/assets/images/dashboard/img_05.jpg";
-
-interface DataType {
+interface Listing {
    id: number;
+   thumb: string;
    title: string;
    address: string;
+   location: string;
    price: number;
-   date: string;
-   view: number;
-   img: StaticImageData;
    status: string;
-   status_bg?: string;
+   createdAt: string;
+   property_info: {
+      sqft: number;
+      bed: string;
+      bath: string;
+   };
 }
 
-const list_data: DataType[] = [
-   {
-      id: 1,
-      title: "Galaxy Flat",
-      address: "Mirpur 10, dhaka, BD",
-      price: 32800,
-      date: "13 Jan, 2023",
-      view: 1210,
-      img: listImg_1,
-      status: "Active",
-   },
-   {
-      id: 2,
-      title: "White House villa",
-      address: "Ranchview, California, USA",
-      price: 42130,
-      date: "09 Jan, 2023",
-      view: 0,
-      img: listImg_2,
-      status: "Pending",
-      status_bg: "pending"
-   },
-   {
-      id: 3,
-      title: "Luxury villa in Dal lake",
-      address: "Muza link road, ca, usa",
-      price: 2370,
-      date: "17 Oct, 2022",
-      view: 0,
-      img: listImg_3,
-      status: "Processing",
-      status_bg: "processing",
-   },
-   {
-      id: 4,
-      title: "Wooden World",
-      address: "Board Baxar, Califronia, USA",
-      price: 63300,
-      date: "23 Sep, 2022",
-      view: 970,
-      img: listImg_4,
-      status: "Active",
-   },
-   {
-      id: 5,
-      title: "Orkit Villa",
-      address: "Green Road, Uttara, BD",
-      price: 72000,
-      date: "15 Aug, 2022",
-      view: 2320,
-      img: listImg_5,
-      status: "Active",
-   },
-]
+interface EditState {
+   address: string;
+   bathrooms: number;
+   bedrooms: number;
+   location: string;
+   price: number;
+   size: number;
+   title: string;
+}
+
+function getEditState(listing: Listing): EditState {
+   return {
+      address: listing.address,
+      bathrooms: Number(listing.property_info.bath),
+      bedrooms: Number(listing.property_info.bed),
+      location: listing.location,
+      price: listing.price,
+      size: listing.property_info.sqft,
+      title: listing.title,
+   };
+}
+
+function formatDate(value: string) {
+   return new Intl.DateTimeFormat("en-AU", {
+      dateStyle: "medium",
+      timeZone: "Australia/Brisbane",
+   }).format(new Date(value));
+}
 
 const PropertyTableBody = () => {
+   const [listings, setListings] = useState<Listing[]>([]);
+   const [editingId, setEditingId] = useState<number | null>(null);
+   const [editState, setEditState] = useState<EditState | null>(null);
+   const [isLoading, setIsLoading] = useState(true);
+   const [error, setError] = useState<string | null>(null);
+
+   const loadListings = async () => {
+      setIsLoading(true);
+      setError(null);
+
+      try {
+         const response = await fetch("/api/listings", { cache: "no-store" });
+
+         if (!response.ok) {
+            throw new Error("Unable to load properties.");
+         }
+
+         const payload = (await response.json()) as { listings: Listing[] };
+         setListings(payload.listings);
+      } catch (nextError) {
+         setError(nextError instanceof Error ? nextError.message : "Unable to load properties.");
+      } finally {
+         setIsLoading(false);
+      }
+   };
+
+   useEffect(() => {
+      loadListings();
+   }, []);
+
+   const handleEditChange = (event: ChangeEvent<HTMLInputElement>) => {
+      if (!editState) {
+         return;
+      }
+
+      const { name, value } = event.target;
+      const numericFields = ["bathrooms", "bedrooms", "price", "size"];
+
+      setEditState({
+         ...editState,
+         [name]: numericFields.includes(name) ? Number(value) : value,
+      });
+   };
+
+   const startEdit = (listing: Listing) => {
+      setEditingId(listing.id);
+      setEditState(getEditState(listing));
+   };
+
+   const cancelEdit = () => {
+      setEditingId(null);
+      setEditState(null);
+   };
+
+   const saveEdit = async (id: number) => {
+      if (!editState) {
+         return;
+      }
+
+      setError(null);
+
+      try {
+         const response = await fetch(`/api/listings/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(editState),
+         });
+
+         if (!response.ok) {
+            const payload = (await response.json()) as { message?: string };
+            throw new Error(payload.message ?? "Unable to update property.");
+         }
+
+         const payload = (await response.json()) as { listing: Listing };
+         setListings((current) =>
+            current.map((listing) =>
+               listing.id === id ? payload.listing : listing,
+            ),
+         );
+         cancelEdit();
+      } catch (nextError) {
+         setError(nextError instanceof Error ? nextError.message : "Unable to update property.");
+      }
+   };
+
+   const deleteProperty = async (id: number) => {
+      setError(null);
+
+      try {
+         const response = await fetch(`/api/listings/${id}`, {
+            method: "DELETE",
+         });
+
+         if (!response.ok) {
+            const payload = (await response.json()) as { message?: string };
+            throw new Error(payload.message ?? "Unable to delete property.");
+         }
+
+         setListings((current) => current.filter((listing) => listing.id !== id));
+      } catch (nextError) {
+         setError(nextError instanceof Error ? nextError.message : "Unable to delete property.");
+      }
+   };
+
+   if (isLoading) {
+      return (
+         <tbody className="border-0">
+            <tr>
+               <td colSpan={5}>Loading submitted properties...</td>
+            </tr>
+         </tbody>
+      );
+   }
+
+   if (error && listings.length === 0) {
+      return (
+         <tbody className="border-0">
+            <tr>
+               <td colSpan={5}>{error}</td>
+            </tr>
+         </tbody>
+      );
+   }
+
+   if (listings.length === 0) {
+      return (
+         <tbody className="border-0">
+            <tr>
+               <td colSpan={5}>No submitted properties yet.</td>
+            </tr>
+         </tbody>
+      );
+   }
+
    return (
       <tbody className="border-0">
-         {list_data.map((item) => (
-            <tr key={item.id}>
-               <td>
-                  <div className="d-lg-flex align-items-center position-relative">
-                     <Image src={item.img} alt="" className="p-img" />
-                     <div className="ps-lg-4 md-pt-10">
-                        <Link href="#" className="property-name tran3s color-dark fw-500 fs-20 stretched-link">{item.title}</Link>
-                        <div className="address">{item.address}</div>
-                        <strong className="price color-dark">${item.price}</strong>
-                     </div>
-                  </div>
-               </td>
-               <td>{item.date}</td>
-               <td>{item.view}</td>
-               <td>
-                  <div className={`property-status ${item.status_bg}`}>{item.status}</div>
-               </td>
-               <td>
-                  <div className="action-dots float-end">
-                     <button className="action-btn dropdown-toggle" type="button" data-bs-toggle="dropdown"
-                        aria-expanded="false">
-                        <span></span>
-                     </button>
-                     <ul className="dropdown-menu dropdown-menu-end">
-                        <li><Link className="dropdown-item" href="#"><Image src={icon_1} alt="" className="lazy-img" /> View</Link></li>
-                        <li><Link className="dropdown-item" href="#"><Image src={icon_2} alt="" className="lazy-img" /> Share</Link></li>
-                        <li><Link className="dropdown-item" href="#"><Image src={icon_3} alt="" className="lazy-img" /> Edit</Link></li>
-                        <li><Link className="dropdown-item" href="#"><Image src={icon_4} alt="" className="lazy-img" /> Delete</Link></li>
-                     </ul>
-                  </div>
-               </td>
+         {error ? (
+            <tr>
+               <td colSpan={5} className="text-danger">{error}</td>
             </tr>
-         ))}
+         ) : null}
+         {listings.map((item) => {
+            const isEditing = editingId === item.id && editState;
+
+            return (
+               <tr key={item.id}>
+                  <td>
+                     <div className="d-lg-flex align-items-center position-relative">
+                        <Image src={item.thumb} width={110} height={90} alt="" className="p-img" />
+                        <div className="ps-lg-4 md-pt-10">
+                           {isEditing ? (
+                              <>
+                                 <input className="mb-2" name="title" value={editState.title} onChange={handleEditChange} />
+                                 <input className="mb-2" name="address" value={editState.address} onChange={handleEditChange} />
+                                 <input name="location" value={editState.location} onChange={handleEditChange} />
+                              </>
+                           ) : (
+                              <>
+                                 <div className="property-name tran3s color-dark fw-500 fs-20">{item.title}</div>
+                                 <div className="address">{item.address}</div>
+                                 <strong className="price color-dark">${item.price.toLocaleString()}</strong>
+                              </>
+                           )}
+                        </div>
+                     </div>
+                  </td>
+                  <td>{formatDate(item.createdAt)}</td>
+                  <td>
+                     {isEditing ? (
+                        <div className="d-flex flex-column gap-2">
+                           <input name="price" type="number" value={editState.price} onChange={handleEditChange} />
+                           <input name="size" type="number" value={editState.size} onChange={handleEditChange} />
+                           <input name="bedrooms" type="number" value={editState.bedrooms} onChange={handleEditChange} />
+                           <input name="bathrooms" type="number" value={editState.bathrooms} onChange={handleEditChange} />
+                        </div>
+                     ) : (
+                        0
+                     )}
+                  </td>
+                  <td>
+                     <div className="property-status">{item.status}</div>
+                  </td>
+                  <td>
+                     {isEditing ? (
+                        <div className="d-flex gap-2 justify-content-end">
+                           <button className="dash-btn-two tran3s border-0" type="button" onClick={() => saveEdit(item.id)}>Save</button>
+                           <button className="dash-cancel-btn tran3s border-0" type="button" onClick={cancelEdit}>Cancel</button>
+                        </div>
+                     ) : (
+                        <div className="action-dots float-end">
+                           <button className="action-btn dropdown-toggle" type="button" data-bs-toggle="dropdown"
+                              aria-expanded="false">
+                              <span></span>
+                           </button>
+                           <ul className="dropdown-menu dropdown-menu-end">
+                              <li><a className="dropdown-item" href={`/listing/${item.id}`}><Image src={icon_1} alt="" className="lazy-img" /> View</a></li>
+                              <li><button className="dropdown-item" type="button" onClick={() => startEdit(item)}><Image src={icon_3} alt="" className="lazy-img" /> Edit</button></li>
+                              <li><button className="dropdown-item" type="button" onClick={() => deleteProperty(item.id)}><Image src={icon_4} alt="" className="lazy-img" /> Delete</button></li>
+                           </ul>
+                        </div>
+                     )}
+                  </td>
+               </tr>
+            );
+         })}
       </tbody>
    )
 }

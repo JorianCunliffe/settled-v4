@@ -40,6 +40,9 @@ const ListingOneArea = () => {
       resetFilters();
    };
 
+   const getDetailsHref = (item: any) =>
+      item.isCreated || item.createdAt ? `/listing/${item.id}` : "/listing_details_01";
+
    return (
       <div className="property-listing-six bg-pink-two pt-110 md-pt-80 pb-150 xl-pb-120 mt-150 xl-mt-120">
          <div className="container container-large">
@@ -90,7 +93,7 @@ const ListingOneArea = () => {
                                           <div className="carousel-inner">
                                              {item.carousel_thumb.map((item: any, i: any) => (
                                                 <div key={i} className={`carousel-item ${item.active}`} data-bs-interval="1000000">
-                                                   <Link href="/listing_details_01" className="d-block"><Image src={item.img} className="w-100" alt="..." /></Link>
+                                                   <Link href={getDetailsHref(item)} className="d-block"><Image src={item.img} className="w-100" alt="..." /></Link>
                                                 </div>
                                              ))}
                                           </div>
@@ -99,7 +102,7 @@ const ListingOneArea = () => {
                                  </div>
 
                                  <div className="property-info p-25">
-                                    <Link href="/listing_details_01" className="title tran3s">{item.title}</Link>
+                                    <Link href={getDetailsHref(item)} className="title tran3s">{item.title}</Link>
                                     <div className="address">{item.address}</div>
                                     <ul className="style-none feature d-flex flex-wrap align-items-center justify-content-between">
                                        <li className="d-flex align-items-center">
@@ -125,7 +128,7 @@ const ListingOneArea = () => {
                                              maximumFractionDigits: 2
                                           })}{item.price_text && <>/<sub>m</sub></>}
                                        </strong>
-                                       <Link href="/listing_details_01" className="btn-four rounded-circle"><i className="bi bi-arrow-up-right"></i></Link>
+                                       <Link href={getDetailsHref(item)} className="btn-four rounded-circle"><i className="bi bi-arrow-up-right"></i></Link>
                                     </div>
                                  </div>
                               </div>

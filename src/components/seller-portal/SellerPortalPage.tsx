@@ -79,11 +79,24 @@ async function loadJourney(): Promise<{
   };
 }
 
+function getPriceFromTarget(targetPrice: string) {
+  const match = targetPrice.replace(/,/g, "").match(/\d+(?:\.\d+)?/);
+
+  if (!match) {
+    return 1000000;
+  }
+
+  const value = Number(match[0]);
+  return targetPrice.toLowerCase().includes("m") ? Math.round(value * 1000000) : value;
+}
+
 export default function SellerPortalPage() {
   const [journey, setJourney] = useState<SellerJourney>(cloneSampleJourney);
   const [persistence, setPersistence] = useState<JourneyPersistence>("memory");
   const [actor, setActor] = useState<JourneyActor>("seller");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCreatingListing, setIsCreatingListing] = useState(false);
+  const [createdListingUrl, setCreatedListingUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -143,6 +156,45 @@ export default function SellerPortalPage() {
     }
   };
 
+  const handleCreateListing = async () => {
+    setIsCreatingListing(true);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/listings", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          address: journey.propertyAddress,
+          bathrooms: 2,
+          bedrooms: 3,
+          category: "Houses",
+          description: `Created from seller journey ${journey.id} for ${journey.sellerName}.`,
+          garages: 1,
+          listingType: "Sell",
+          location: journey.propertyAddress.split(",").slice(-1)[0]?.trim() || journey.propertyAddress,
+          price: getPriceFromTarget(journey.targetPrice),
+          size: 220,
+          title: journey.propertyAddress,
+        }),
+      });
+
+      if (!response.ok) {
+        const payload = (await response.json()) as { message?: string };
+        throw new Error(payload.message ?? "Unable to create listing.");
+      }
+
+      const payload = (await response.json()) as { listing: { id: number } };
+      setCreatedListingUrl(`/listing/${payload.listing.id}`);
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : "Unable to create listing.");
+    } finally {
+      setIsCreatingListing(false);
+    }
+  };
+
   return (
     <main className={styles.page}>
       <div className={styles.container}>
@@ -165,6 +217,9 @@ export default function SellerPortalPage() {
               </Link>
               <Link className={styles.secondaryLink} href="/home-two">
                 View Hozn frontend
+              </Link>
+              <Link className={styles.secondaryLink} href="/admin/seller-journey">
+                Admin controls
               </Link>
             </div>
           </div>
@@ -261,7 +316,7 @@ export default function SellerPortalPage() {
                       <div>
                         <h3>{candidate.name}</h3>
                         <p>
-                          {candidate.suburb} · {candidate.specialty}
+                          {candidate.suburb} &middot; {candidate.specialty}
                         </p>
                       </div>
                       <span className={styles.rating}>{candidate.rating.toFixed(1)}</span>
@@ -315,9 +370,34 @@ export default function SellerPortalPage() {
                 )}
               </div>
 
+              {journey.currentState === "ready_for_listing" ||
+              journey.currentState === "live_on_portals" ? (
+                <div className={styles.actions}>
+                  <button
+                    className={styles.actionButton}
+                    disabled={isCreatingListing}
+                    onClick={handleCreateListing}
+                    type="button"
+                  >
+                    <strong>
+                      {isCreatingListing ? "Creating listing..." : "Create frontend listing"}
+                    </strong>
+                    <br />
+                    Generate a real public listing from this seller journey.
+                  </button>
+                  {createdListingUrl ? (
+                    <Link className={styles.actionButton} href={createdListingUrl}>
+                      <strong>View created listing</strong>
+                      <br />
+                      Open the public listing detail page.
+                    </Link>
+                  ) : null}
+                </div>
+              ) : null}
+
               {error ? <p className={styles.footerNote}>{error}</p> : null}
               <p className={styles.footerNote}>
-                Current role: <strong>{actor}</strong> · Current state:{" "}
+                Current role: <strong>{actor}</strong> &middot; Current state:{" "}
                 <strong>{stateMeta[journey.currentState].label}</strong>
               </p>
               <p className={styles.footerNote}>
@@ -332,7 +412,7 @@ export default function SellerPortalPage() {
                   <div key={`${entry.at}-${entry.to}`} className={styles.timelineItem}>
                     <span className={styles.timelineMeta}>
                       {formatTimelineAt(entry.at)}{" "}
-                      · {entry.actor}
+                      &middot; {entry.actor}
                     </span>
                     <strong>{stateMeta[entry.to].label}</strong>
                     <p>{entry.note}</p>

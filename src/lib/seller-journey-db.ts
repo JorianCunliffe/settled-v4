@@ -31,6 +31,7 @@ type EventRow = {
 declare global {
   var sellerJourneyPool: Pool | undefined;
   var sellerJourneySchemaReady: boolean | undefined;
+  var sellerJourneyMemoryStore: Map<string, SellerJourney> | undefined;
 }
 
 function getConnectionString(): string | null {
@@ -64,6 +65,45 @@ function getPool(): Pool | null {
   }
 
   return globalThis.sellerJourneyPool;
+}
+
+function cloneJourney(journey: SellerJourney): SellerJourney {
+  return {
+    ...journey,
+    timeline: journey.timeline.map((entry) => ({ ...entry })),
+    checklist: journey.checklist.map((item) => ({ ...item })),
+    agentCandidates: journey.agentCandidates.map((candidate) => ({
+      ...candidate,
+    })),
+  };
+}
+
+function getMemoryStore() {
+  if (!globalThis.sellerJourneyMemoryStore) {
+    const seeded = cloneSampleJourney();
+    globalThis.sellerJourneyMemoryStore = new Map([[seeded.id, seeded]]);
+  }
+
+  return globalThis.sellerJourneyMemoryStore;
+}
+
+function loadMemoryJourney(journeyId?: string): SellerJourney {
+  const store = getMemoryStore();
+  const fallbackId = cloneSampleJourney().id;
+  const effectiveId = journeyId ?? fallbackId;
+  const journey = store.get(effectiveId) ?? store.get(fallbackId);
+
+  if (!journey) {
+    const seeded = cloneSampleJourney();
+    store.set(seeded.id, seeded);
+    return cloneJourney(seeded);
+  }
+
+  return cloneJourney(journey);
+}
+
+function saveMemoryJourney(journey: SellerJourney) {
+  getMemoryStore().set(journey.id, cloneJourney(journey));
 }
 
 async function ensureSchema(client: PoolClient) {
@@ -233,7 +273,7 @@ export async function loadJourney(journeyId?: string): Promise<{
 
   if (!pool) {
     return {
-      journey: cloneSampleJourney(),
+      journey: loadMemoryJourney(journeyId),
       persistence: "memory",
     };
   }
@@ -302,11 +342,13 @@ export async function transitionStoredJourney(params: {
 
   if (!pool) {
     const journey = transitionJourney({
-      journey: cloneSampleJourney(),
+      journey: loadMemoryJourney(params.journeyId),
       actor: params.actor,
       to: params.to,
       note: params.note,
     });
+
+    saveMemoryJourney(journey);
 
     return { journey, persistence: "memory" };
   }
@@ -363,6 +405,98 @@ export async function transitionStoredJourney(params: {
     const latestEntry = nextJourney.timeline[nextJourney.timeline.length - 1];
     await persistTimelineEntry(client, nextJourney.id, latestEntry);
 
+    await client.query("COMMIT");
+
+    return {
+      journey: nextJourney,
+      persistence: "database",
+    };
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+export async function setStoredJourneyState(params: {
+  actor: JourneyActor;
+  journeyId?: string;
+  note?: string;
+  to: JourneyState;
+}): Promise<{
+  journey: SellerJourney;
+  persistence: JourneyPersistence;
+}> {
+  const pool = getPool();
+
+  if (!pool) {
+    const currentJourney = loadMemoryJourney(params.journeyId);
+    const nextJourney: SellerJourney = {
+      ...currentJourney,
+      currentState: params.to,
+      timeline: [
+        ...currentJourney.timeline,
+        {
+          actor: params.actor,
+          at: new Date().toISOString(),
+          from: currentJourney.currentState,
+          note:
+            params.note ??
+            `Admin set the journey state to ${params.to} for ${params.actor}.`,
+          to: params.to,
+        },
+      ],
+    };
+
+    saveMemoryJourney(nextJourney);
+
+    return { journey: nextJourney, persistence: "memory" };
+  }
+
+  const client = await pool.connect();
+
+  try {
+    await ensureSchema(client);
+    await client.query("BEGIN");
+
+    const seededId = params.journeyId ?? cloneSampleJourney().id;
+    let currentJourney = await fetchJourneyById(client, seededId);
+
+    if (!currentJourney) {
+      await seedJourney(client);
+      currentJourney = await fetchJourneyById(client, cloneSampleJourney().id);
+    }
+
+    if (!currentJourney) {
+      throw new Error("Unable to load the seller journey.");
+    }
+
+    const entry: TimelineEntry = {
+      actor: params.actor,
+      at: new Date().toISOString(),
+      from: currentJourney.currentState,
+      note:
+        params.note ??
+        `Admin set the journey state to ${params.to} for ${params.actor}.`,
+      to: params.to,
+    };
+
+    const nextJourney: SellerJourney = {
+      ...currentJourney,
+      currentState: params.to,
+      timeline: [...currentJourney.timeline, entry],
+    };
+
+    await client.query(
+      `
+        UPDATE seller_journeys
+        SET current_state = $2, updated_at = NOW()
+        WHERE id = $1
+      `,
+      [nextJourney.id, nextJourney.currentState],
+    );
+    await persistTimelineEntry(client, nextJourney.id, entry);
     await client.query("COMMIT");
 
     return {

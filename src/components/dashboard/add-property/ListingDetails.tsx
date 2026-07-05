@@ -1,8 +1,17 @@
 import NumberNiceSelect from "@/ui/NumberNiceSelect";
+import { ChangeEvent } from "react";
 
-const ListingDetails = () => {
+interface ListingDetailsProps {
+   onBathroomsChange: (event: ChangeEvent<HTMLSelectElement>) => void;
+   onBedroomsChange: (event: ChangeEvent<HTMLSelectElement>) => void;
+   onGaragesChange: (event: ChangeEvent<HTMLSelectElement>) => void;
+}
 
-   const selectHandler = (e: any) => { };
+const ListingDetails = ({
+   onBathroomsChange,
+   onBedroomsChange,
+   onGaragesChange,
+}: ListingDetailsProps) => {
 
    return (
       <div className="bg-white card-box border-20 mt-40">
@@ -11,7 +20,7 @@ const ListingDetails = () => {
             <div className="col-md-6">
                <div className="dash-input-wrapper mb-30">
                   <label htmlFor="">Size in ft*</label>
-                  <input type="text" placeholder="Ex: 3,210 sqft" />
+                  <input name="size" type="number" min="1" placeholder="Ex: 3210" required />
                </div>
             </div>
             <div className="col-md-6">
@@ -24,8 +33,8 @@ const ListingDetails = () => {
                         { value: 3, text: 2 },
                         { value: 4, text: 3 },
                      ]}
-                     defaultCurrent={0}
-                     onChange={selectHandler}
+                     defaultCurrent={2}
+                     onChange={onBedroomsChange}
                      name=""
                      placeholder="" />
                </div>
@@ -40,8 +49,8 @@ const ListingDetails = () => {
                         { value: 3, text: 2 },
                         { value: 4, text: 3 },
                      ]}
-                     defaultCurrent={0}
-                     onChange={selectHandler}
+                     defaultCurrent={2}
+                     onChange={onBathroomsChange}
                      name=""
                      placeholder="" />
                </div>
@@ -57,7 +66,7 @@ const ListingDetails = () => {
                         { value: 4, text: 3 },
                      ]}
                      defaultCurrent={0}
-                     onChange={selectHandler}
+                     onChange={() => undefined}
                      name=""
                      placeholder="" />
                </div>
@@ -73,7 +82,7 @@ const ListingDetails = () => {
                         { value: 4, text: 4 },
                      ]}
                      defaultCurrent={0}
-                     onChange={selectHandler}
+                     onChange={onGaragesChange}
                      name=""
                      placeholder="" />
                </div>
@@ -87,7 +96,7 @@ const ListingDetails = () => {
             <div className="col-md-6">
                <div className="dash-input-wrapper mb-30">
                   <label htmlFor="">Year Built*</label>
-                  <input type="text" placeholder="Type Year" />
+                  <input name="yearBuilt" type="text" placeholder="Type Year" />
                </div>
             </div>
             <div className="col-md-6">
@@ -101,7 +110,7 @@ const ListingDetails = () => {
                         { value: 4, text: 3 },
                      ]}
                      defaultCurrent={0}
-                     onChange={selectHandler}
+                     onChange={() => undefined}
                      name=""
                      placeholder="" />
                </div>

@@ -2,7 +2,11 @@ import NiceSelect from "@/ui/NiceSelect";
 import Image from "next/image";
 import locationImage from "@/assets/images/dashboard/icon/icon_16.svg";
 
-const AddressAndLocation = () => {
+interface AddressAndLocationProps {
+   formMode?: boolean;
+}
+
+const AddressAndLocation = ({ formMode = false }: AddressAndLocationProps) => {
 
    const selectHandler = (e: any) => { };
 
@@ -13,7 +17,7 @@ const AddressAndLocation = () => {
             <div className="col-12">
                <div className="dash-input-wrapper mb-25">
                   <label htmlFor="">Address*</label>
-                  <input type="text" placeholder="19 Yawkey Way" />
+                  <input name={formMode ? "address" : undefined} type="text" placeholder="19 Yawkey Way" required={formMode} />
                </div>
             </div>
             <div className="col-lg-3">
@@ -95,7 +99,7 @@ const AddressAndLocation = () => {
             <div className="dash-input-wrapper mb-25">
                <label htmlFor="">Map Location*</label>
                <div className="position-relative">
-                  <input type="text" placeholder="XC23+6XC, Moiran, N105" />
+                  <input name={formMode ? "location" : undefined} type="text" placeholder="Coorparoo, QLD" required={formMode} />
                   <button className="location-pin tran3s"><Image src={locationImage} alt="" className="lazy-img m-auto" /></button>
                </div>
                <div className="map-frame mt-30">

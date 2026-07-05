@@ -2,7 +2,7 @@
 
 import SettledLogo from "@/components/common/SettledLogo";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import styles from "./SellerPortalPage.module.scss";
 import {
   cloneSampleJourney,
@@ -16,9 +16,9 @@ import {
 } from "@/lib/seller-journey";
 
 const actors: { value: JourneyActor; label: string }[] = [
-  { value: "seller", label: "Seller view" },
-  { value: "agent", label: "Agent view" },
-  { value: "coordinator", label: "Concierge view" },
+  { value: "seller", label: "Seller" },
+  { value: "agent", label: "Agent" },
+  { value: "coordinator", label: "Concierge" },
 ];
 
 const timelineFormatter = new Intl.DateTimeFormat("en-AU", {
@@ -90,6 +90,38 @@ function getPriceFromTarget(targetPrice: string) {
   return targetPrice.toLowerCase().includes("m") ? Math.round(value * 1000000) : value;
 }
 
+function Disclosure({
+  title,
+  subtitle,
+  children,
+  defaultOpen = false,
+}: {
+  title: string;
+  subtitle?: string;
+  children: ReactNode;
+  defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+
+  return (
+    <div className={styles.disclosure}>
+      <button
+        aria-expanded={open}
+        className={styles.disclosureTrigger}
+        onClick={() => setOpen((value) => !value)}
+        type="button"
+      >
+        <span>
+          <strong>{title}</strong>
+          {subtitle ? <span className={styles.disclosureSubtitle}>{subtitle}</span> : null}
+        </span>
+        <span className={styles.disclosureIcon}>{open ? "−" : "+"}</span>
+      </button>
+      {open ? <div className={styles.disclosurePanel}>{children}</div> : null}
+    </div>
+  );
+}
+
 export default function SellerPortalPage() {
   const [journey, setJourney] = useState<SellerJourney>(cloneSampleJourney);
   const [persistence, setPersistence] = useState<JourneyPersistence>("memory");
@@ -99,10 +131,14 @@ export default function SellerPortalPage() {
   const [createdListingUrl, setCreatedListingUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [uploadedDocs, setUploadedDocs] = useState<Record<string, string>>({});
 
   const actions = getAvailableTransitions(journey.currentState, actor);
-  const completedStates =
-    journeyStates.indexOf(journey.currentState) + 1;
+  const stageIndex = journeyStates.indexOf(journey.currentState);
+  const totalStages = journeyStates.length;
+  const currentMeta = stateMeta[journey.currentState];
+  const previousState = stageIndex > 0 ? journeyStates[stageIndex - 1] : null;
+  const nextState = stageIndex < totalStages - 1 ? journeyStates[stageIndex + 1] : null;
 
   useEffect(() => {
     let isMounted = true;
@@ -195,158 +231,56 @@ export default function SellerPortalPage() {
     }
   };
 
+  const handleDocSelected = (docLabel: string, fileName: string) => {
+    setUploadedDocs((current) => ({ ...current, [`${journey.currentState}:${docLabel}`]: fileName }));
+  };
+
+  const outstandingChecklist = journey.checklist.filter((item) => !item.done);
+
   return (
     <main className={styles.page}>
       <div className={styles.container}>
-        <section className={styles.hero}>
-          <div>
-            <div className={styles.heroLogo}>
-              <SettledLogo priority width={250} height={125} />
-            </div>
-            <div className={styles.eyebrow}>Settled Seller Concierge</div>
-            <h1>Guide every seller from first enquiry to portal launch.</h1>
-            <p>
-              This first pass keeps the Hozn visual base, but turns the entry
-              point into a Vercel-friendly seller portal with a real transition
-              model for agent selection, sale preparation, and listing
-              activation.
-            </p>
-            <div className={styles.heroActions}>
-              <Link className={styles.primaryLink} href="/sell">
-                Seller portal
-              </Link>
-              <Link className={styles.secondaryLink} href="/home-two">
-                View Hozn frontend
-              </Link>
-              <Link className={styles.secondaryLink} href="/admin/seller-journey">
-                Admin controls
-              </Link>
-            </div>
+        <header className={styles.topBar}>
+          <div className={styles.topBarBrand}>
+            <SettledLogo priority width={140} height={70} />
           </div>
-
-          <aside className={styles.heroCard}>
-            <h2>Why this deploys cleanly on Vercel</h2>
-            <div className={styles.heroList}>
-              <div className={styles.heroListItem}>
-                <span>1</span>
-              <div>Frontend remains a native Next.js app with app router pages.</div>
-              </div>
-              <div className={styles.heroListItem}>
-                <span>2</span>
-                <div>Transition validation and persistence now run in Next API routes.</div>
-              </div>
-              <div className={styles.heroListItem}>
-                <span>3</span>
-                <div>The older backend stays available as a reference while we re-platform safely.</div>
-              </div>
-            </div>
-          </aside>
-        </section>
-
-        <section className={styles.metrics}>
-          <article className={styles.metric}>
-            <span className={styles.metricLabel}>Property</span>
+          <div className={styles.topBarProperty}>
             <strong>{journey.propertyAddress}</strong>
-          </article>
-          <article className={styles.metric}>
-            <span className={styles.metricLabel}>Seller Goal</span>
-            <strong>{journey.targetPrice}</strong>
-          </article>
-          <article className={styles.metric}>
-            <span className={styles.metricLabel}>Progress</span>
-            <strong>
-              {completedStates}/{journeyStates.length} stages
-            </strong>
-          </article>
-          <article className={styles.metric}>
-            <span className={styles.metricLabel}>Persistence</span>
-            <strong>{isLoading ? "Loading..." : persistence}</strong>
-          </article>
-        </section>
-
-        <section className={styles.grid}>
-          <div className={styles.stack}>
-            <article className={styles.panel}>
-              <h2>Journey state machine</h2>
-              <div className={styles.stateRail}>
-                {journeyStates.map((state) => {
-                  const meta = stateMeta[state];
-                  const isActive = state === journey.currentState;
-
-                  return (
-                    <div
-                      key={state}
-                      className={`${styles.stateCard} ${isActive ? styles.stateCardActive : ""}`}
-                      style={{ borderLeftColor: meta.accent }}
-                    >
-                      <div className={styles.stateHeader}>
-                        <strong>{meta.label}</strong>
-                        {isActive ? <span className={styles.badge}>Current</span> : null}
-                      </div>
-                      <p>{meta.summary}</p>
-                    </div>
-                  );
-                })}
-              </div>
-            </article>
-
-            <article className={styles.panel}>
-              <h2>Seller preparation checklist</h2>
-              <div className={styles.checklist}>
-                {journey.checklist.map((item) => (
-                  <div key={item.title} className={styles.checklistItem}>
-                    <span
-                      className={`${styles.dot} ${item.done ? styles.dotDone : ""}`}
-                    />
-                    <div>
-                      <strong>{item.title}</strong>
-                      <p>{item.owner} owned task</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </article>
-
-            <article className={styles.panel}>
-              <h2>Recommended agents</h2>
-              <div className={styles.candidates}>
-                {journey.agentCandidates.map((candidate) => (
-                  <div key={candidate.id} className={styles.candidate}>
-                    <div className={styles.candidateTop}>
-                      <div>
-                        <h3>{candidate.name}</h3>
-                        <p>
-                          {candidate.suburb} &middot; {candidate.specialty}
-                        </p>
-                      </div>
-                      <span className={styles.rating}>{candidate.rating.toFixed(1)}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </article>
+            <span>{journey.targetPrice}</span>
           </div>
+          <div className={styles.actorTabs}>
+            {actors.map((item) => (
+              <button
+                key={item.value}
+                className={`${styles.actorTab} ${actor === item.value ? styles.actorTabActive : ""}`}
+                onClick={() => setActor(item.value)}
+                type="button"
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+        </header>
 
-          <div className={styles.stack}>
-            <article className={styles.actionPanel}>
-              <h2>Role-aware controls</h2>
-              <p>
-                Swap perspectives to verify that the available actions change
-                with the current actor.
-              </p>
-
-              <div className={styles.actorTabs}>
-                {actors.map((item) => (
-                  <button
-                    key={item.value}
-                    className={`${styles.actorTab} ${actor === item.value ? styles.actorTabActive : ""}`}
-                    onClick={() => setActor(item.value)}
-                    type="button"
-                  >
-                    {item.label}
-                  </button>
-                ))}
+        {isLoading ? (
+          <p className={styles.loadingNote}>Loading your sale plan...</p>
+        ) : (
+          <>
+            <section className={styles.statusHero} style={{ borderTopColor: currentMeta.accent }}>
+              <div className={styles.statusStageLabel}>
+                Step {stageIndex + 1} of {totalStages}
               </div>
+              <div className={styles.progressBar}>
+                <div
+                  className={styles.progressBarFill}
+                  style={{
+                    width: `${((stageIndex + 1) / totalStages) * 100}%`,
+                    background: currentMeta.accent,
+                  }}
+                />
+              </div>
+              <h1>{currentMeta.label}</h1>
+              <p className={styles.statusExplainer}>{currentMeta.whatHappensNow}</p>
 
               <div className={styles.actions}>
                 {actions.length > 0 ? (
@@ -365,14 +299,12 @@ export default function SellerPortalPage() {
                   ))
                 ) : (
                   <button className={styles.ghostButton} disabled type="button">
-                    No actions available for this role at the current stage.
+                    No actions available for the {actor} role at this stage.
                   </button>
                 )}
-              </div>
 
-              {journey.currentState === "ready_for_listing" ||
-              journey.currentState === "live_on_portals" ? (
-                <div className={styles.actions}>
+                {journey.currentState === "ready_for_listing" ||
+                journey.currentState === "live_on_portals" ? (
                   <button
                     className={styles.actionButton}
                     disabled={isCreatingListing}
@@ -385,43 +317,182 @@ export default function SellerPortalPage() {
                     <br />
                     Generate a real public listing from this seller journey.
                   </button>
-                  {createdListingUrl ? (
-                    <Link className={styles.actionButton} href={createdListingUrl}>
-                      <strong>View created listing</strong>
-                      <br />
-                      Open the public listing detail page.
-                    </Link>
-                  ) : null}
-                </div>
+                ) : null}
+
+                {createdListingUrl ? (
+                  <Link className={styles.actionButton} href={createdListingUrl}>
+                    <strong>View created listing</strong>
+                    <br />
+                    Open the public listing detail page.
+                  </Link>
+                ) : null}
+              </div>
+
+              {error ? <p className={styles.errorNote}>{error}</p> : null}
+            </section>
+
+            <section className={styles.panel}>
+              <h2>What you need to do to proceed</h2>
+              <ul className={styles.doList}>
+                {currentMeta.whatYouNeedToDo.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+
+              {currentMeta.documentsNeeded.length > 0 ? (
+                <>
+                  <h3 className={styles.subheading}>Documents to upload</h3>
+                  <div className={styles.uploadList}>
+                    {currentMeta.documentsNeeded.map((doc) => {
+                      const key = `${journey.currentState}:${doc}`;
+                      const fileName = uploadedDocs[key];
+
+                      return (
+                        <label className={styles.uploadItem} key={doc}>
+                          <div>
+                            <strong>{doc}</strong>
+                            {fileName ? (
+                              <span className={styles.uploadDone}>Uploaded: {fileName}</span>
+                            ) : (
+                              <span className={styles.uploadPending}>Not uploaded yet</span>
+                            )}
+                          </div>
+                          <input
+                            accept="application/pdf,image/*"
+                            onChange={(event) => {
+                              const file = event.target.files?.[0];
+                              if (file) {
+                                handleDocSelected(doc, file.name);
+                              }
+                            }}
+                            style={{ display: "none" }}
+                            type="file"
+                          />
+                          <span className={styles.uploadButton}>{fileName ? "Replace" : "Upload"}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </>
               ) : null}
 
-              {error ? <p className={styles.footerNote}>{error}</p> : null}
-              <p className={styles.footerNote}>
-                Current role: <strong>{actor}</strong> &middot; Current state:{" "}
-                <strong>{stateMeta[journey.currentState].label}</strong>
-              </p>
-              <p className={styles.footerNote}>
-                Data source: <strong>{persistence}</strong>
-              </p>
-            </article>
-
-            <article className={styles.timelinePanel}>
-              <h2>Activity timeline</h2>
-              <div className={styles.timeline}>
-                {[...journey.timeline].reverse().map((entry) => (
-                  <div key={`${entry.at}-${entry.to}`} className={styles.timelineItem}>
-                    <span className={styles.timelineMeta}>
-                      {formatTimelineAt(entry.at)}{" "}
-                      &middot; {entry.actor}
-                    </span>
-                    <strong>{stateMeta[entry.to].label}</strong>
-                    <p>{entry.note}</p>
+              {outstandingChecklist.length > 0 ? (
+                <>
+                  <h3 className={styles.subheading}>Open tasks</h3>
+                  <div className={styles.checklist}>
+                    {outstandingChecklist.map((item) => (
+                      <div key={item.title} className={styles.checklistItem}>
+                        <span className={styles.dot} />
+                        <div>
+                          <strong>{item.title}</strong>
+                          <p>{item.owner} owned task</p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </article>
-          </div>
-        </section>
+                </>
+              ) : null}
+
+              <p className={styles.tipCallout}>
+                <strong>Tip:</strong> {currentMeta.helpTip}
+              </p>
+            </section>
+
+            <section className={styles.stack}>
+              <Disclosure title="Previous step" subtitle={previousState ? stateMeta[previousState].label : "None"}>
+                {previousState ? (
+                  <p>{stateMeta[previousState].summary}</p>
+                ) : (
+                  <p>This is the first step in the journey.</p>
+                )}
+              </Disclosure>
+
+              <Disclosure title="Next step" subtitle={nextState ? stateMeta[nextState].label : "None"}>
+                {nextState ? (
+                  <p>{stateMeta[nextState].summary}</p>
+                ) : (
+                  <p>This is the final step in the journey.</p>
+                )}
+              </Disclosure>
+
+              <Disclosure title="Full journey map" subtitle={`${totalStages} stages`}>
+                <div className={styles.stateRail}>
+                  {journeyStates.map((state) => {
+                    const meta = stateMeta[state];
+                    const isActive = state === journey.currentState;
+
+                    return (
+                      <div
+                        key={state}
+                        className={`${styles.stateCard} ${isActive ? styles.stateCardActive : ""}`}
+                        style={{ borderLeftColor: meta.accent }}
+                      >
+                        <div className={styles.stateHeader}>
+                          <strong>{meta.label}</strong>
+                          {isActive ? <span className={styles.badge}>Current</span> : null}
+                        </div>
+                        <p>{meta.summary}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </Disclosure>
+
+              <Disclosure title="Activity history" subtitle={`${journey.timeline.length} events`}>
+                <div className={styles.timeline}>
+                  {[...journey.timeline].reverse().map((entry) => (
+                    <div key={`${entry.at}-${entry.to}`} className={styles.timelineItem}>
+                      <span className={styles.timelineMeta}>
+                        {formatTimelineAt(entry.at)} &middot; {entry.actor}
+                      </span>
+                      <strong>{stateMeta[entry.to].label}</strong>
+                      <p>{entry.note}</p>
+                    </div>
+                  ))}
+                </div>
+              </Disclosure>
+
+              {journey.agentCandidates.length > 0 ? (
+                <Disclosure title="Recommended agents" subtitle={`${journey.agentCandidates.length} candidates`}>
+                  <div className={styles.candidates}>
+                    {journey.agentCandidates.map((candidate) => (
+                      <div key={candidate.id} className={styles.candidate}>
+                        <div className={styles.candidateTop}>
+                          <div>
+                            <h3>{candidate.name}</h3>
+                            <p>
+                              {candidate.suburb} &middot; {candidate.specialty}
+                            </p>
+                          </div>
+                          <span className={styles.rating}>{candidate.rating.toFixed(1)}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </Disclosure>
+              ) : null}
+
+              <Disclosure title="All tasks" subtitle={`${journey.checklist.length} total`}>
+                <div className={styles.checklist}>
+                  {journey.checklist.map((item) => (
+                    <div key={item.title} className={styles.checklistItem}>
+                      <span className={`${styles.dot} ${item.done ? styles.dotDone : ""}`} />
+                      <div>
+                        <strong>{item.title}</strong>
+                        <p>{item.owner} owned task</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </Disclosure>
+            </section>
+
+            <p className={styles.footerNote}>
+              Signed in as <strong>{actor}</strong> &middot; Data source: <strong>{persistence}</strong>{" "}
+              &middot; <Link href="/admin/seller-journey">Admin controls</Link>
+            </p>
+          </>
+        )}
       </div>
     </main>
   );

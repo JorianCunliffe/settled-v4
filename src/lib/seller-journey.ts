@@ -52,49 +52,138 @@ export interface SellerJourney {
 
 export type JourneyPersistence = "database" | "memory";
 
-export const stateMeta: Record<
-  JourneyState,
-  { label: string; summary: string; accent: string }
-> = {
+export interface StageMeta {
+  label: string;
+  summary: string;
+  accent: string;
+  /** Longer explanation of what is happening right now, shown on the status view. */
+  whatHappensNow: string;
+  /** Actionable steps the seller/agent should complete to move forward. */
+  whatYouNeedToDo: string[];
+  /** Documents or files that should be uploaded to proceed, if any. */
+  documentsNeeded: string[];
+  /** A short, reassuring tip or answer to a common question at this stage. */
+  helpTip: string;
+}
+
+export const stateMeta: Record<JourneyState, StageMeta> = {
   intake: {
     label: "Seller Intake",
     summary: "Collect address, goals, and timing so the sale plan starts with context.",
     accent: "#144a44",
+    whatHappensNow:
+      "We're gathering the essentials about your property and your goals. Once this is complete, we'll match you with local agents suited to your property.",
+    whatYouNeedToDo: [
+      "Confirm your property address and ownership details",
+      "Share your ideal sale timeframe",
+      "Tell us your target price range",
+    ],
+    documentsNeeded: [
+      "Proof of ownership (title or rates notice)",
+      "Recent photos of the property (optional but helpful)",
+    ],
+    helpTip:
+      "Not sure about pricing yet? A rough range is fine — your agent will help refine it during preparation.",
   },
   agent_matching: {
     label: "Agent Matching",
     summary: "Shortlist the best-fit local agents based on suburb, style, and sale goals.",
     accent: "#a85f2a",
+    whatHappensNow:
+      "We've shortlisted local agents based on your suburb, property type, and sale goals. Review the candidates and choose who will represent you.",
+    whatYouNeedToDo: [
+      "Review the recommended agents",
+      "Interview your top one or two choices",
+      "Appoint the agent you'd like to work with",
+    ],
+    documentsNeeded: [],
+    helpTip:
+      "Look for agents with strong recent sales in your suburb and a communication style that suits you.",
   },
   agent_appointed: {
     label: "Agent Appointed",
     summary: "Confirm representation, authority, and the working cadence with the seller.",
     accent: "#0d5d81",
+    whatHappensNow:
+      "Your agent is confirmed. Next, they'll formalise the agency agreement and start planning your campaign.",
+    whatYouNeedToDo: [
+      "Sign the agency agreement",
+      "Agree on the marketing plan and budget with your agent",
+    ],
+    documentsNeeded: ["Signed agency agreement", "Photo ID for contract verification"],
+    helpTip:
+      "Your agent will walk you through the agreement — ask about commission, marketing spend, and campaign length before signing.",
   },
   prep_in_progress: {
     label: "Sale Preparation",
     summary: "Coordinate styling, repairs, documents, photography, and launch readiness.",
     accent: "#7a3b7a",
+    whatHappensNow:
+      "Your agent is coordinating styling, repairs, photography, and paperwork to get your home launch-ready.",
+    whatYouNeedToDo: [
+      "Complete any agreed repairs or styling",
+      "Provide access for photography and inspections",
+      "Review and approve marketing copy and photos",
+    ],
+    documentsNeeded: [
+      "Contract of sale / vendor disclosure statement",
+      "Building and pest reports (if available)",
+      "Approved floor plan (if available)",
+    ],
+    helpTip:
+      "This is the stage where small presentation improvements tend to have the biggest impact on buyer interest.",
   },
   ready_for_listing: {
     label: "Ready To List",
     summary: "Everything is approved and ready to push to the public portals.",
     accent: "#23613e",
+    whatHappensNow:
+      "Everything is prepared and approved. We're ready to publish your listing to the public portals.",
+    whatYouNeedToDo: [
+      "Give final sign-off on listing copy, photos, and price guide",
+      "Confirm inspection times",
+    ],
+    documentsNeeded: [],
+    helpTip:
+      "Once live, your listing syncs automatically across connected portals — no manual re-entry needed.",
   },
   live_on_portals: {
     label: "Live On Portals",
     summary: "The property is active, visible, and synchronised across listing destinations.",
     accent: "#8b2e3a",
+    whatHappensNow:
+      "Your property is live and visible to buyers. Your agent is running inspections and following up on enquiries.",
+    whatYouNeedToDo: [
+      "Track enquiries and inspection attendance with your agent",
+      "Review buyer feedback as it comes in",
+    ],
+    documentsNeeded: [],
+    helpTip:
+      "Ask your agent for a weekly campaign report so you can track enquiry volume and buyer sentiment.",
   },
   under_offer: {
     label: "Under Offer",
     summary: "Buyer negotiations are underway and the campaign shifts into closing mode.",
     accent: "#5b4c12",
+    whatHappensNow:
+      "A buyer has made an offer and negotiations are underway. The campaign is moving toward closing.",
+    whatYouNeedToDo: [
+      "Review and respond to offer terms",
+      "Confirm the buyer's finance and conditions",
+      "Instruct your solicitor or conveyancer",
+    ],
+    documentsNeeded: ["Signed contract of sale (once accepted)", "Solicitor or conveyancer details"],
+    helpTip: "If the offer falls through, the campaign can return to market at any time — nothing is lost.",
   },
   settled: {
     label: "Settled",
     summary: "The sale is complete and the seller journey is archived.",
     accent: "#1d2533",
+    whatHappensNow:
+      "Congratulations — the sale is complete and settlement has occurred. Your seller journey is now archived.",
+    whatYouNeedToDo: ["Confirm receipt of settlement funds", "Hand over keys and property access"],
+    documentsNeeded: [],
+    helpTip: "You can revisit your full activity history any time from this page.",
   },
 };
 

@@ -150,12 +150,6 @@ const transitionMap: Record<JourneyState, TransitionOption[]> = {
   ],
   ready_for_listing: [
     {
-      to: "prep_in_progress",
-      actor: "agent",
-      label: "Send back to prep",
-      detail: "Additional work is needed before the property can go live.",
-    },
-    {
       to: "live_on_portals",
       actor: "coordinator",
       label: "Push live",

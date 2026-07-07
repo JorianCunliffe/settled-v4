@@ -247,7 +247,6 @@ Current normal transition rules:
 | `agent_matching` | `seller` | `agent_appointed` |
 | `agent_appointed` | `agent` | `prep_in_progress` |
 | `prep_in_progress` | `agent` | `ready_for_listing` |
-| `ready_for_listing` | `agent` | `prep_in_progress` |
 | `ready_for_listing` | `coordinator` | `live_on_portals` |
 | `live_on_portals` | `agent` | `under_offer` |
 | `under_offer` | `agent` | `live_on_portals` |

@@ -9,7 +9,6 @@ import {
   getAvailableTransitions,
   journeyStates,
   stateMeta,
-  type HelpResourceType,
   type JourneyPersistence,
   type JourneyActor,
   type JourneyState,
@@ -123,12 +122,6 @@ function Disclosure({
   );
 }
 
-const resourceTypeLabel: Record<HelpResourceType, string> = {
-  video: "Video",
-  article: "Article",
-  guide: "Guide",
-};
-
 interface ChatMessage {
   id: string;
   from: "assistant" | "user";
@@ -139,7 +132,7 @@ const initialChatMessages: ChatMessage[] = [
   {
     id: "welcome",
     from: "assistant",
-    text: "Hi, I'm the Settled Assistant. Ask me anything about your current step — full AI-powered answers are coming soon.",
+    text: "Hi, I'm the Settled Assistant. I'm always here if the video or guide for your step doesn't answer your question. Full AI-powered answers are coming soon.",
   },
 ];
 
@@ -162,7 +155,7 @@ function ChatBot() {
       {
         id: `assistant-${Date.now()}`,
         from: "assistant",
-        text: "Thanks for the message! Live AI answers aren't wired up yet — in the meantime, check the help resources for this step or ask your agent directly.",
+        text: "Thanks for the message! Live AI answers aren't wired up yet — in the meantime, check the video and guide for this step or ask your agent directly.",
       },
     ]);
     setDraft("");
@@ -215,7 +208,7 @@ function ChatBot() {
         onClick={() => setIsOpen((value) => !value)}
         type="button"
       >
-        {isOpen ? "Close chat" : "Chat with us"}
+        {isOpen ? "Close chat" : "Need help? Chat"}
       </button>
     </div>
   );
@@ -236,16 +229,16 @@ export default function SellerPortalPage() {
 
   const actions = getAvailableTransitions(journey.currentState, actor);
   const totalStages = journeyStates.length;
-  const currentMeta = stateMeta[journey.currentState];
 
   const viewIndex = journeyStates.indexOf(viewState);
   const viewMeta = stateMeta[viewState];
   const isViewingCurrent = viewState === journey.currentState;
   const canViewPrevious = viewIndex > 0;
   const canViewNext = viewIndex < totalStages - 1;
+  const showAgentNotes = actor !== "seller";
 
-  const visibleResources = viewMeta.helpResources.filter(
-    (resource) => actor === "coordinator" || resource.audience === "both" || resource.audience === actor,
+  const viewChecklist = journey.checklist.filter(
+    (item) => (item.state ?? journey.currentState) === viewState,
   );
 
   useEffect(() => {
@@ -380,8 +373,6 @@ export default function SellerPortalPage() {
     }
   };
 
-  const outstandingChecklist = journey.checklist.filter((item) => !item.done);
-
   return (
     <main className={styles.page}>
       <div className={styles.container}>
@@ -511,12 +502,22 @@ export default function SellerPortalPage() {
             </section>
 
             <section className={styles.panel}>
-              <h2>What you need to do to proceed</h2>
-              <ul className={styles.doList}>
-                {viewMeta.whatYouNeedToDo.map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
-              </ul>
+              <h2>Checklist for this step</h2>
+              {viewChecklist.length > 0 ? (
+                <div className={styles.checklist}>
+                  {viewChecklist.map((item) => (
+                    <div key={item.title} className={styles.checklistItem}>
+                      <span className={`${styles.dot} ${item.done ? styles.dotDone : ""}`} />
+                      <div>
+                        <strong>{item.title}</strong>
+                        <p>{item.owner} owned task</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className={styles.panelSubtitle}>No tasks recorded for this step.</p>
+              )}
 
               {viewMeta.documentsNeeded.length > 0 ? (
                 <>
@@ -584,61 +585,48 @@ export default function SellerPortalPage() {
                 </>
               ) : null}
 
-              {isViewingCurrent && outstandingChecklist.length > 0 ? (
-                <>
-                  <h3 className={styles.subheading}>Open tasks</h3>
-                  <div className={styles.checklist}>
-                    {outstandingChecklist.map((item) => (
-                      <div key={item.title} className={styles.checklistItem}>
-                        <span className={styles.dot} />
-                        <div>
-                          <strong>{item.title}</strong>
-                          <p>{item.owner} owned task</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              ) : null}
-
               <p className={styles.tipCallout}>
                 <strong>Tip:</strong> {viewMeta.helpTip}
               </p>
             </section>
 
             <section className={styles.panel}>
-              <h2>Help resources for this step</h2>
-              {visibleResources.length > 0 ? (
-                <div className={styles.resourceList}>
-                  {visibleResources.map((resource) => (
-                    <div className={styles.resourceItem} key={resource.id}>
-                      <div className={styles.resourceMeta}>
-                        <span className={styles.resourceType}>{resourceTypeLabel[resource.type]}</span>
-                        {resource.durationMinutes ? (
-                          <span className={styles.resourceDuration}>{resource.durationMinutes} min</span>
-                        ) : null}
-                        <span className={styles.resourceAudience}>
-                          {resource.audience === "both"
-                            ? "For everyone"
-                            : resource.audience === "agent"
-                              ? "For agents"
-                              : "For sellers"}
-                        </span>
-                      </div>
-                      <strong>{resource.title}</strong>
-                      <p>{resource.description}</p>
-                    </div>
-                  ))}
+              <h2>Help for this step</h2>
+              <div className={styles.helpGrid}>
+                <div className={styles.helpCard}>
+                  <div className={styles.resourceMeta}>
+                    <span className={styles.resourceType}>Video</span>
+                    <span className={styles.resourceDuration}>
+                      {viewMeta.helpVideo.durationMinutes} min
+                    </span>
+                  </div>
+                  <strong>{viewMeta.helpVideo.title}</strong>
+                  <p>{viewMeta.helpVideo.description}</p>
+                  {showAgentNotes && viewMeta.helpVideo.agentNotes ? (
+                    <p className={styles.agentNote}>
+                      <strong>For agents:</strong> {viewMeta.helpVideo.agentNotes}
+                    </p>
+                  ) : null}
                 </div>
-              ) : (
-                <p className={styles.footerNote}>No help resources for this step yet.</p>
-              )}
+                <div className={styles.helpCard}>
+                  <div className={styles.resourceMeta}>
+                    <span className={styles.resourceType}>Guide</span>
+                  </div>
+                  <strong>{viewMeta.helpGuide.title}</strong>
+                  <p>{viewMeta.helpGuide.description}</p>
+                  {showAgentNotes && viewMeta.helpGuide.agentNotes ? (
+                    <p className={styles.agentNote}>
+                      <strong>For agents:</strong> {viewMeta.helpGuide.agentNotes}
+                    </p>
+                  ) : null}
+                </div>
+              </div>
             </section>
 
             <section className={styles.panel}>
-              <h2>Associated services</h2>
+              <h2>Services &amp; vendors for this step</h2>
               <p className={styles.panelSubtitle}>
-                Agents: offer these when relevant. Sellers: ask your agent if any of these would help.
+                Agents: offer these when relevant. Sellers: ask your agent which vendor suits you.
               </p>
               {viewMeta.associatedServices.length > 0 ? (
                 <div className={styles.serviceList}>
@@ -650,11 +638,22 @@ export default function SellerPortalPage() {
                       </div>
                       <p>{service.description}</p>
                       <span className={styles.serviceCost}>{service.typicalCost}</span>
+                      <div className={styles.vendorList}>
+                        {service.vendors.map((vendor) => (
+                          <div className={styles.vendorItem} key={vendor.id}>
+                            <div>
+                              <strong>{vendor.name}</strong>
+                              <p>{vendor.blurb}</p>
+                            </div>
+                            <span className={styles.rating}>{vendor.rating.toFixed(1)}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className={styles.footerNote}>No associated services for this step.</p>
+                <p className={styles.footerNote}>No services for this step.</p>
               )}
             </section>
 
@@ -716,17 +715,34 @@ export default function SellerPortalPage() {
                 </Disclosure>
               ) : null}
 
-              <Disclosure title="All tasks" subtitle={`${journey.checklist.length} total`}>
-                <div className={styles.checklist}>
-                  {journey.checklist.map((item) => (
-                    <div key={item.title} className={styles.checklistItem}>
-                      <span className={`${styles.dot} ${item.done ? styles.dotDone : ""}`} />
-                      <div>
-                        <strong>{item.title}</strong>
-                        <p>{item.owner} owned task</p>
+              <Disclosure title="All tasks by step" subtitle={`${journey.checklist.length} total`}>
+                <div className={styles.taskGroups}>
+                  {journeyStates.map((state) => {
+                    const items = journey.checklist.filter(
+                      (item) => (item.state ?? journey.currentState) === state,
+                    );
+
+                    if (items.length === 0) {
+                      return null;
+                    }
+
+                    return (
+                      <div key={state}>
+                        <h3 className={styles.subheading}>{stateMeta[state].label}</h3>
+                        <div className={styles.checklist}>
+                          {items.map((item) => (
+                            <div key={`${state}-${item.title}`} className={styles.checklistItem}>
+                              <span className={`${styles.dot} ${item.done ? styles.dotDone : ""}`} />
+                              <div>
+                                <strong>{item.title}</strong>
+                                <p>{item.owner} owned task</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </Disclosure>
             </section>

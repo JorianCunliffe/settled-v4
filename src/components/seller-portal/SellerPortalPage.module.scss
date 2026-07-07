@@ -476,13 +476,13 @@
   margin: -6px 0 16px;
 }
 
-.resourceList,
-.serviceList {
+.helpGrid {
   display: grid;
   gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.resourceItem,
+.helpCard,
 .serviceItem {
   background: rgba(255, 255, 255, 0.6);
   border: 1px solid rgba(22, 33, 29, 0.08);
@@ -490,17 +490,38 @@
   padding: 16px;
 }
 
-.resourceItem strong,
-.serviceItem strong {
+.serviceList {
+  display: grid;
+  gap: 12px;
+}
+
+.helpCard > strong,
+.serviceItem > .serviceTop strong {
   display: block;
   font-size: 0.98rem;
   margin-bottom: 4px;
 }
 
-.resourceItem p,
+.helpCard p,
 .serviceItem p {
   color: #516059;
   margin: 0;
+}
+
+.helpCard p + p {
+  margin-top: 8px;
+}
+
+.agentNote {
+  background: rgba(13, 93, 129, 0.08);
+  border-radius: 12px;
+  color: #0d5d81 !important;
+  font-size: 0.88rem;
+  padding: 10px 12px;
+}
+
+.agentNote strong {
+  color: inherit;
 }
 
 .resourceMeta {
@@ -512,7 +533,6 @@
 
 .resourceType,
 .resourceDuration,
-.resourceAudience,
 .serviceCategory {
   background: rgba(21, 58, 53, 0.08);
   border-radius: 999px;
@@ -537,6 +557,43 @@
   font-size: 0.85rem;
   font-weight: 700;
   margin-top: 8px;
+}
+
+.vendorList {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.vendorItem {
+  align-items: center;
+  background: rgba(21, 58, 53, 0.04);
+  border: 1px solid rgba(21, 58, 53, 0.08);
+  border-radius: 12px;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 10px 14px;
+}
+
+.vendorItem strong {
+  display: block;
+  font-size: 0.9rem;
+}
+
+.vendorItem p {
+  color: #516059;
+  font-size: 0.82rem;
+  margin: 0;
+}
+
+.taskGroups {
+  display: grid;
+  gap: 6px;
+}
+
+.taskGroups .subheading {
+  margin-top: 10px;
 }
 
 .chatWidget {
@@ -656,5 +713,9 @@
   .previewNotice {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .helpGrid {
+    grid-template-columns: 1fr;
   }
 }

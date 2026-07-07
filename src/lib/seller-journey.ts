@@ -29,6 +29,8 @@ export interface ChecklistItem {
   title: string;
   owner: JourneyActor;
   done: boolean;
+  /** The journey step this task belongs to. */
+  state: JourneyState;
 }
 
 export interface AgentCandidate {
@@ -63,16 +65,26 @@ export interface SellerJourney {
 
 export type JourneyPersistence = "database" | "memory";
 
-export type HelpResourceAudience = "seller" | "agent" | "both";
-export type HelpResourceType = "video" | "article" | "guide";
-
-export interface HelpResource {
-  id: string;
+export interface StageHelpVideo {
   title: string;
-  type: HelpResourceType;
-  audience: HelpResourceAudience;
+  durationMinutes: number;
   description: string;
-  durationMinutes?: number;
+  /** Extra by-the-book guidance shown only to agents. */
+  agentNotes?: string;
+}
+
+export interface StageHelpGuide {
+  title: string;
+  description: string;
+  /** Extra by-the-book guidance shown only to agents. */
+  agentNotes?: string;
+}
+
+export interface ServiceVendor {
+  id: string;
+  name: string;
+  rating: number;
+  blurb: string;
 }
 
 export interface AssociatedService {
@@ -81,6 +93,8 @@ export interface AssociatedService {
   category: string;
   description: string;
   typicalCost: string;
+  /** Vendors the seller and agent can choose between for this service. */
+  vendors: ServiceVendor[];
 }
 
 export interface StageMeta {
@@ -89,15 +103,15 @@ export interface StageMeta {
   accent: string;
   /** Longer explanation of what is happening right now, shown on the status view. */
   whatHappensNow: string;
-  /** Actionable steps the seller/agent should complete to move forward. */
-  whatYouNeedToDo: string[];
   /** Documents or files that should be uploaded to proceed, if any. */
   documentsNeeded: string[];
   /** A short, reassuring tip or answer to a common question at this stage. */
   helpTip: string;
-  /** Videos, articles, and guides relevant to this stage, tagged by intended audience. */
-  helpResources: HelpResource[];
-  /** Add-on services an agent can offer, or a seller can ask about, at this stage. */
+  /** The help video for this step. Every step has one. */
+  helpVideo: StageHelpVideo;
+  /** The document guide for this step. Every step has one. */
+  helpGuide: StageHelpGuide;
+  /** Add-on services with vendor choices for this step. */
   associatedServices: AssociatedService[];
 }
 
@@ -108,42 +122,37 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
     accent: "#144a44",
     whatHappensNow:
       "We're gathering the essentials about your property and your goals. Once this is complete, we'll match you with local agents suited to your property.",
-    whatYouNeedToDo: [
-      "Confirm your property address and ownership details",
-      "Share your ideal sale timeframe",
-      "Tell us your target price range",
-    ],
     documentsNeeded: [
       "Proof of ownership (title or rates notice)",
       "Recent photos of the property (optional but helpful)",
     ],
     helpTip:
       "Not sure about pricing yet? A rough range is fine — your agent will help refine it during preparation.",
-    helpResources: [
-      {
-        id: "intake-agent-compliance",
-        title: "Running a compliant intake call",
-        type: "video",
-        audience: "agent",
-        durationMinutes: 4,
-        description:
-          "Required disclosures, note-taking, and CRM record keeping for a new seller intake, so the file is audit-ready from day one.",
-      },
-      {
-        id: "intake-seller-expect",
-        title: "What to expect during intake",
-        type: "article",
-        audience: "both",
-        description: "A short guide to the information we ask for at this stage and why it speeds up matching.",
-      },
-    ],
+    helpVideo: {
+      title: "Getting started: your sale plan",
+      durationMinutes: 4,
+      description:
+        "What happens during intake, the information we collect, and how it shapes your agent shortlist.",
+      agentNotes:
+        "Cover required disclosures, note-taking, and CRM record keeping so the file is audit-ready from day one.",
+    },
+    helpGuide: {
+      title: "Intake checklist guide",
+      description:
+        "A short document covering the details we ask for at this stage and why they speed up agent matching.",
+      agentNotes: "Includes the intake compliance checklist to complete before moving to matching.",
+    },
     associatedServices: [
       {
         id: "svc-valuation",
         name: "Independent property valuation",
         category: "Valuation",
-        description: "A formal valuation to sanity-check the seller's target price range before agent matching.",
+        description: "A formal valuation to sanity-check the target price range before agent matching.",
         typicalCost: "$300 - $600",
+        vendors: [
+          { id: "val-opteon", name: "Opteon Valuers", rating: 4.8, blurb: "Fast turnaround, Brisbane-wide coverage." },
+          { id: "val-herron", name: "Herron Todd White", rating: 4.7, blurb: "Detailed reports accepted by all major lenders." },
+        ],
       },
       {
         id: "svc-legal-pack",
@@ -151,6 +160,10 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
         category: "Legal",
         description: "Title search and contract preparation started early so it's ready once an agent is appointed.",
         typicalCost: "$400 - $800",
+        vendors: [
+          { id: "leg-conveyworks", name: "ConveyWorks", rating: 4.9, blurb: "Fixed-fee packs with 48-hour turnaround." },
+          { id: "leg-bne-property-law", name: "Brisbane Property Law", rating: 4.6, blurb: "Solicitor-led, good for complex titles." },
+        ],
       },
     ],
   },
@@ -160,32 +173,22 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
     accent: "#a85f2a",
     whatHappensNow:
       "We've shortlisted local agents based on your suburb, property type, and sale goals. Review the candidates and choose who will represent you.",
-    whatYouNeedToDo: [
-      "Review the recommended agents",
-      "Interview your top one or two choices",
-      "Appoint the agent you'd like to work with",
-    ],
     documentsNeeded: [],
     helpTip:
       "Look for agents with strong recent sales in your suburb and a communication style that suits you.",
-    helpResources: [
-      {
-        id: "matching-agent-disclosure",
-        title: "Presenting a shortlist the right way",
-        type: "video",
-        audience: "agent",
-        durationMinutes: 5,
-        description:
-          "Fee transparency, conflict-of-interest disclosure, and how to present comparative market data fairly.",
-      },
-      {
-        id: "matching-seller-compare",
-        title: "How to compare agents",
-        type: "article",
-        audience: "both",
-        description: "Questions worth asking in an agent interview, and what strong local performance looks like.",
-      },
-    ],
+    helpVideo: {
+      title: "Choosing the right agent",
+      durationMinutes: 5,
+      description:
+        "What to look for in an agent interview, how to read local performance data, and the questions worth asking.",
+      agentNotes:
+        "Fee transparency, conflict-of-interest disclosure, and presenting comparative market data fairly.",
+    },
+    helpGuide: {
+      title: "Agent comparison guide",
+      description:
+        "A one-page worksheet for comparing shortlisted agents on results, fees, and communication style.",
+    },
     associatedServices: [
       {
         id: "svc-cma",
@@ -193,6 +196,9 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
         category: "Research",
         description: "A detailed report on recent comparable sales, prepared by the shortlisted agents.",
         typicalCost: "Usually free with a listing",
+        vendors: [
+          { id: "cma-shortlist", name: "Your shortlisted agents", rating: 4.8, blurb: "Each candidate prepares one as part of their pitch." },
+        ],
       },
     ],
   },
@@ -202,31 +208,23 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
     accent: "#0d5d81",
     whatHappensNow:
       "Your agent is confirmed. Next, they'll formalise the agency agreement and start planning your campaign.",
-    whatYouNeedToDo: [
-      "Sign the agency agreement",
-      "Agree on the marketing plan and budget with your agent",
-    ],
     documentsNeeded: ["Signed agency agreement", "Photo ID for contract verification"],
     helpTip:
       "Your agent will walk you through the agreement — ask about commission, marketing spend, and campaign length before signing.",
-    helpResources: [
-      {
-        id: "appointed-agent-agreement",
-        title: "Agency agreements: what must be disclosed",
-        type: "video",
-        audience: "agent",
-        durationMinutes: 6,
-        description:
-          "Cooling-off periods, commission disclosure, and the property information statements required in your state before signing.",
-      },
-      {
-        id: "appointed-seller-agreement",
-        title: "Understanding your agency agreement",
-        type: "article",
-        audience: "both",
-        description: "Plain-language walkthrough of the clauses sellers ask about most: commission, term, and exit.",
-      },
-    ],
+    helpVideo: {
+      title: "Understanding your agency agreement",
+      durationMinutes: 6,
+      description:
+        "Plain-language walkthrough of commission, term, marketing spend, and how to exit if it isn't working.",
+      agentNotes:
+        "Cooling-off periods, commission disclosure, and the property information statements required in your state before signing.",
+    },
+    helpGuide: {
+      title: "Agency agreement guide",
+      description:
+        "The clauses sellers ask about most — commission, exclusivity, term, and exit — explained in one document.",
+      agentNotes: "Includes the signing checklist: ID verification, disclosure forms, and copies for the seller.",
+    },
     associatedServices: [
       {
         id: "svc-marketing-upgrade",
@@ -234,6 +232,10 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
         category: "Marketing",
         description: "Premium portal placement, print collateral, and social campaign add-ons for the agreement.",
         typicalCost: "$800 - $2,500",
+        vendors: [
+          { id: "mkt-campaigntrack", name: "CampaignTrack", rating: 4.7, blurb: "Bundled portal + print + social packages." },
+          { id: "mkt-realhub", name: "Realhub", rating: 4.6, blurb: "Flexible à la carte marketing add-ons." },
+        ],
       },
       {
         id: "svc-photography",
@@ -241,6 +243,10 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
         category: "Media",
         description: "Licensed photographer booking bundled into the marketing plan.",
         typicalCost: "$350 - $600",
+        vendors: [
+          { id: "photo-topsnap", name: "Top Snap", rating: 4.8, blurb: "Twilight and elevated shots included." },
+          { id: "photo-urbanangles", name: "Urban Angles", rating: 4.9, blurb: "Premium editorial style, 48-hour delivery." },
+        ],
       },
     ],
   },
@@ -250,11 +256,6 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
     accent: "#7a3b7a",
     whatHappensNow:
       "Your agent is coordinating styling, repairs, photography, and paperwork to get your home launch-ready.",
-    whatYouNeedToDo: [
-      "Complete any agreed repairs or styling",
-      "Provide access for photography and inspections",
-      "Review and approve marketing copy and photos",
-    ],
     documentsNeeded: [
       "Contract of sale / vendor disclosure statement",
       "Building and pest reports (if available)",
@@ -262,24 +263,20 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
     ],
     helpTip:
       "This is the stage where small presentation improvements tend to have the biggest impact on buyer interest.",
-    helpResources: [
-      {
-        id: "prep-agent-compliance",
-        title: "Running a compliant campaign prep",
-        type: "video",
-        audience: "agent",
-        durationMinutes: 7,
-        description:
-          "Underquoting law, photography and access consent, and keeping a clean paper trail before you go live.",
-      },
-      {
-        id: "prep-seller-ready",
-        title: "Getting your home ready to list",
-        type: "article",
-        audience: "both",
-        description: "A practical checklist for styling, minor repairs, and what buyers notice first.",
-      },
-    ],
+    helpVideo: {
+      title: "Getting your home launch-ready",
+      durationMinutes: 7,
+      description:
+        "Styling, minor repairs, photography prep, and what buyers notice first — with before/after examples.",
+      agentNotes:
+        "Underquoting law, photography and access consent, and keeping a clean paper trail before you go live.",
+    },
+    helpGuide: {
+      title: "Preparation checklist guide",
+      description:
+        "Room-by-room presentation checklist plus the paperwork that must be complete before listing.",
+      agentNotes: "Includes the pre-launch compliance checklist: contract, disclosures, and marketing approvals.",
+    },
     associatedServices: [
       {
         id: "svc-styling",
@@ -287,6 +284,10 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
         category: "Presentation",
         description: "Furniture and styling hire to present the property at its best for photography and inspections.",
         typicalCost: "$1,500 - $4,000",
+        vendors: [
+          { id: "style-bowerbird", name: "BOWERBIRD Interiors", rating: 4.8, blurb: "Full and partial staging packages." },
+          { id: "style-coco", name: "Coco Republic Styling", rating: 4.7, blurb: "Premium furniture, strong for character homes." },
+        ],
       },
       {
         id: "svc-inspection",
@@ -294,6 +295,10 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
         category: "Inspection",
         description: "An upfront report so surprises don't stall negotiations later.",
         typicalCost: "$400 - $700",
+        vendors: [
+          { id: "insp-jims", name: "Jim's Building Inspections", rating: 4.6, blurb: "Same-week bookings, combined reports." },
+          { id: "insp-bpi", name: "BPI Brisbane", rating: 4.8, blurb: "Thermal imaging included as standard." },
+        ],
       },
       {
         id: "svc-repairs",
@@ -301,6 +306,10 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
         category: "Trades",
         description: "Small fixes — touch-up paint, loose fittings, garden tidy — before photography day.",
         typicalCost: "Varies by scope",
+        vendors: [
+          { id: "trade-hire-hubby", name: "Hire A Hubby", rating: 4.5, blurb: "Broad coverage, quick quotes." },
+          { id: "trade-local", name: "Settled vetted local trades", rating: 4.7, blurb: "Pre-vetted tradies coordinated by your agent." },
+        ],
       },
     ],
   },
@@ -310,30 +319,20 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
     accent: "#23613e",
     whatHappensNow:
       "Everything is prepared and approved. We're ready to publish your listing to the public portals.",
-    whatYouNeedToDo: [
-      "Give final sign-off on listing copy, photos, and price guide",
-      "Confirm inspection times",
-    ],
     documentsNeeded: [],
     helpTip:
       "Once live, your listing syncs automatically across connected portals — no manual re-entry needed.",
-    helpResources: [
-      {
-        id: "ready-agent-check",
-        title: "Pre-launch compliance check",
-        type: "video",
-        audience: "agent",
-        durationMinutes: 3,
-        description: "Final price guide accuracy check and confirming disclosure documents are attached before launch.",
-      },
-      {
-        id: "ready-seller-signoff",
-        title: "Final sign-off checklist explained",
-        type: "article",
-        audience: "both",
-        description: "What you're approving in the final review, and how to request a last-minute change.",
-      },
-    ],
+    helpVideo: {
+      title: "Your final sign-off, explained",
+      durationMinutes: 3,
+      description:
+        "What you're approving in the final review — copy, photos, price guide — and how to request changes.",
+      agentNotes: "Final price guide accuracy check and confirming disclosure documents are attached before launch.",
+    },
+    helpGuide: {
+      title: "Launch sign-off guide",
+      description: "The final checklist covering listing copy, photography, price guide, and inspection times.",
+    },
     associatedServices: [
       {
         id: "svc-portal-upgrade",
@@ -341,6 +340,10 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
         category: "Marketing",
         description: "Featured or highlighted placement on major listing portals for launch week.",
         typicalCost: "$300 - $900",
+        vendors: [
+          { id: "portal-rea", name: "realestate.com.au Premiere", rating: 4.7, blurb: "Largest buyer audience in Australia." },
+          { id: "portal-domain", name: "Domain Platinum", rating: 4.6, blurb: "Strong inner-city and premium reach." },
+        ],
       },
       {
         id: "svc-signboard",
@@ -348,6 +351,9 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
         category: "Marketing",
         description: "Street signage and printed brochures for inspections.",
         typicalCost: "$150 - $400",
+        vendors: [
+          { id: "print-sign-fast", name: "SignFast", rating: 4.5, blurb: "Photo boards installed within 3 days." },
+        ],
       },
     ],
   },
@@ -357,31 +363,21 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
     accent: "#8b2e3a",
     whatHappensNow:
       "Your property is live and visible to buyers. Your agent is running inspections and following up on enquiries.",
-    whatYouNeedToDo: [
-      "Track enquiries and inspection attendance with your agent",
-      "Review buyer feedback as it comes in",
-    ],
     documentsNeeded: [],
     helpTip:
       "Ask your agent for a weekly campaign report so you can track enquiry volume and buyer sentiment.",
-    helpResources: [
-      {
-        id: "live-agent-offers",
-        title: "Handling enquiries and offers by the book",
-        type: "video",
-        audience: "agent",
-        durationMinutes: 6,
-        description:
-          "Fair trading obligations for presenting all offers to the seller and keeping a compliant record of enquiries.",
-      },
-      {
-        id: "live-seller-expect",
-        title: "What happens once you're live",
-        type: "article",
-        audience: "both",
-        description: "How inspections, enquiries, and feedback typically flow during an active campaign.",
-      },
-    ],
+    helpVideo: {
+      title: "What happens once you're live",
+      durationMinutes: 6,
+      description:
+        "How inspections, enquiries, and buyer feedback typically flow during an active campaign — and what a good week looks like.",
+      agentNotes:
+        "Fair trading obligations for presenting all offers to the seller and keeping a compliant record of enquiries.",
+    },
+    helpGuide: {
+      title: "Campaign tracking guide",
+      description: "How to read your weekly campaign report: enquiry volume, inspection numbers, and feedback themes.",
+    },
     associatedServices: [
       {
         id: "svc-social-boost",
@@ -389,6 +385,10 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
         category: "Marketing",
         description: "Paid social promotion to extend reach beyond the portals during the live campaign.",
         typicalCost: "$200 - $600",
+        vendors: [
+          { id: "social-idashboard", name: "iDashboard Social", rating: 4.5, blurb: "Targeted local buyer audiences." },
+          { id: "social-propps", name: "Propps Digital", rating: 4.6, blurb: "Retargeting for portal viewers." },
+        ],
       },
       {
         id: "svc-drone",
@@ -396,6 +396,9 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
         category: "Media",
         description: "A walkthrough video or aerial footage to support online listings.",
         typicalCost: "$400 - $900",
+        vendors: [
+          { id: "drone-skyshots", name: "SkyShots Media", rating: 4.7, blurb: "CASA-licensed drone operators." },
+        ],
       },
     ],
   },
@@ -405,31 +408,20 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
     accent: "#5b4c12",
     whatHappensNow:
       "A buyer has made an offer and negotiations are underway. The campaign is moving toward closing.",
-    whatYouNeedToDo: [
-      "Review and respond to offer terms",
-      "Confirm the buyer's finance and conditions",
-      "Instruct your solicitor or conveyancer",
-    ],
     documentsNeeded: ["Signed contract of sale (once accepted)", "Solicitor or conveyancer details"],
     helpTip: "If the offer falls through, the campaign can return to market at any time — nothing is lost.",
-    helpResources: [
-      {
-        id: "offer-agent-conditions",
-        title: "Managing offers and contract conditions compliantly",
-        type: "video",
-        audience: "agent",
-        durationMinutes: 8,
-        description:
-          "Cooling-off periods, special conditions, and finance clauses — what to check before a contract is signed.",
-      },
-      {
-        id: "offer-seller-process",
-        title: "Understanding the offer and contract process",
-        type: "article",
-        audience: "both",
-        description: "What each contract condition means and typical timeframes to settlement.",
-      },
-    ],
+    helpVideo: {
+      title: "Offers and contracts, step by step",
+      durationMinutes: 8,
+      description:
+        "What each contract condition means, typical timeframes to settlement, and how negotiations usually play out.",
+      agentNotes:
+        "Cooling-off periods, special conditions, and finance clauses — what to check before a contract is signed.",
+    },
+    helpGuide: {
+      title: "Contract conditions guide",
+      description: "Finance clauses, building and pest conditions, and settlement timeframes explained in plain language.",
+    },
     associatedServices: [
       {
         id: "svc-conveyancing",
@@ -437,6 +429,10 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
         category: "Legal",
         description: "Manages the legal transfer of ownership through to settlement.",
         typicalCost: "$800 - $1,500",
+        vendors: [
+          { id: "conv-bytherules", name: "Bytherules Conveyancing", rating: 4.8, blurb: "Fixed fee, fully online process." },
+          { id: "conv-rivercity", name: "River City Conveyancing", rating: 4.7, blurb: "Local team, strong on tight settlements." },
+        ],
       },
       {
         id: "svc-compliance-cert",
@@ -444,6 +440,9 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
         category: "Legal",
         description: "Certificate confirming any structures on the property meet approval requirements.",
         typicalCost: "$200 - $500",
+        vendors: [
+          { id: "cert-certifygroup", name: "The Certifier Group", rating: 4.6, blurb: "Pool and structure certifications." },
+        ],
       },
     ],
   },
@@ -453,26 +452,18 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
     accent: "#1d2533",
     whatHappensNow:
       "Congratulations — the sale is complete and settlement has occurred. Your seller journey is now archived.",
-    whatYouNeedToDo: ["Confirm receipt of settlement funds", "Hand over keys and property access"],
     documentsNeeded: [],
     helpTip: "You can revisit your full activity history any time from this page.",
-    helpResources: [
-      {
-        id: "settled-agent-records",
-        title: "Post-settlement compliance and record retention",
-        type: "video",
-        audience: "agent",
-        durationMinutes: 3,
-        description: "What must be retained on file after settlement and for how long, per your state's requirements.",
-      },
-      {
-        id: "settled-seller-next",
-        title: "What happens after settlement",
-        type: "article",
-        audience: "both",
-        description: "Key hand-over steps: keys, utilities, and final funds disbursement.",
-      },
-    ],
+    helpVideo: {
+      title: "After settlement: what's next",
+      durationMinutes: 3,
+      description: "Key hand-over steps — keys, utilities, and final funds disbursement — once the sale completes.",
+      agentNotes: "What must be retained on file after settlement and for how long, per your state's requirements.",
+    },
+    helpGuide: {
+      title: "Settlement hand-over guide",
+      description: "A short checklist for keys, utility transfers, mail redirection, and confirming your funds.",
+    },
     associatedServices: [
       {
         id: "svc-removalist",
@@ -480,6 +471,10 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
         category: "Moving",
         description: "Vetted removalist partners for moving day.",
         typicalCost: "Quoted directly by provider",
+        vendors: [
+          { id: "move-2men", name: "Two Men and a Truck", rating: 4.5, blurb: "Flexible short-notice bookings." },
+          { id: "move-allied", name: "Allied Moving Services", rating: 4.6, blurb: "Full pack-and-move service." },
+        ],
       },
       {
         id: "svc-utilities",
@@ -487,6 +482,9 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
         category: "Moving",
         description: "Free service to transfer or disconnect electricity, gas, and internet.",
         typicalCost: "Free",
+        vendors: [
+          { id: "util-myconnect", name: "MyConnect", rating: 4.7, blurb: "One call moves every service." },
+        ],
       },
     ],
   },
@@ -598,11 +596,29 @@ export const sampleJourney: SellerJourney = {
     },
   ],
   checklist: [
-    { title: "Confirm motivation, timeframe, and reserve expectations", owner: "seller", done: true },
-    { title: "Compare shortlist conversion rates by suburb and property type", owner: "coordinator", done: true },
-    { title: "Seller interviews top two agents", owner: "seller", done: false },
-    { title: "Book styling and pre-listing maintenance", owner: "agent", done: false },
-    { title: "Gather contract, disclosures, and photography brief", owner: "agent", done: false },
+    { title: "Confirm property address and ownership details", owner: "seller", done: true, state: "intake" },
+    { title: "Share sale timeframe and target price range", owner: "seller", done: true, state: "intake" },
+    { title: "Upload proof of ownership", owner: "seller", done: true, state: "intake" },
+    { title: "Review the recommended agents", owner: "seller", done: true, state: "agent_matching" },
+    { title: "Compare shortlist performance by suburb and property type", owner: "coordinator", done: true, state: "agent_matching" },
+    { title: "Interview your top two agents", owner: "seller", done: false, state: "agent_matching" },
+    { title: "Appoint your preferred agent", owner: "seller", done: false, state: "agent_matching" },
+    { title: "Sign the agency agreement", owner: "seller", done: false, state: "agent_appointed" },
+    { title: "Upload photo ID for contract verification", owner: "seller", done: false, state: "agent_appointed" },
+    { title: "Agree on the marketing plan and budget", owner: "agent", done: false, state: "agent_appointed" },
+    { title: "Book styling and pre-listing maintenance", owner: "agent", done: false, state: "prep_in_progress" },
+    { title: "Schedule photography and media", owner: "agent", done: false, state: "prep_in_progress" },
+    { title: "Prepare contract of sale and disclosures", owner: "agent", done: false, state: "prep_in_progress" },
+    { title: "Approve marketing copy and photos", owner: "seller", done: false, state: "prep_in_progress" },
+    { title: "Give final sign-off on copy, photos, and price guide", owner: "seller", done: false, state: "ready_for_listing" },
+    { title: "Confirm inspection times", owner: "agent", done: false, state: "ready_for_listing" },
+    { title: "Share weekly campaign report with the seller", owner: "agent", done: false, state: "live_on_portals" },
+    { title: "Collect buyer feedback after each inspection", owner: "agent", done: false, state: "live_on_portals" },
+    { title: "Review and respond to offer terms", owner: "seller", done: false, state: "under_offer" },
+    { title: "Confirm buyer finance and conditions", owner: "agent", done: false, state: "under_offer" },
+    { title: "Instruct solicitor or conveyancer", owner: "seller", done: false, state: "under_offer" },
+    { title: "Confirm receipt of settlement funds", owner: "seller", done: false, state: "settled" },
+    { title: "Hand over keys and property access", owner: "seller", done: false, state: "settled" },
   ],
   agentCandidates: [
     {

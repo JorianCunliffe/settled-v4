@@ -69,9 +69,14 @@ export interface StageHelpVideo {
   title: string;
   durationMinutes: number;
   description: string;
+  /** Playable video source. Currently a shared placeholder until per-step videos are produced. */
+  url: string;
   /** Extra by-the-book guidance shown only to agents. */
   agentNotes?: string;
 }
+
+/** Shared placeholder until real per-step help videos are produced. */
+export const helpVideoPlaceholderUrl = "/videos/help-placeholder.mp4";
 
 export interface StageHelpGuide {
   title: string;
@@ -129,6 +134,7 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
     helpTip:
       "Not sure about pricing yet? A rough range is fine — your agent will help refine it during preparation.",
     helpVideo: {
+      url: helpVideoPlaceholderUrl,
       title: "Getting started: your sale plan",
       durationMinutes: 4,
       description:
@@ -177,6 +183,7 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
     helpTip:
       "Look for agents with strong recent sales in your suburb and a communication style that suits you.",
     helpVideo: {
+      url: helpVideoPlaceholderUrl,
       title: "Choosing the right agent",
       durationMinutes: 5,
       description:
@@ -212,6 +219,7 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
     helpTip:
       "Your agent will walk you through the agreement — ask about commission, marketing spend, and campaign length before signing.",
     helpVideo: {
+      url: helpVideoPlaceholderUrl,
       title: "Understanding your agency agreement",
       durationMinutes: 6,
       description:
@@ -264,6 +272,7 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
     helpTip:
       "This is the stage where small presentation improvements tend to have the biggest impact on buyer interest.",
     helpVideo: {
+      url: helpVideoPlaceholderUrl,
       title: "Getting your home launch-ready",
       durationMinutes: 7,
       description:
@@ -323,6 +332,7 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
     helpTip:
       "Once live, your listing syncs automatically across connected portals — no manual re-entry needed.",
     helpVideo: {
+      url: helpVideoPlaceholderUrl,
       title: "Your final sign-off, explained",
       durationMinutes: 3,
       description:
@@ -367,6 +377,7 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
     helpTip:
       "Ask your agent for a weekly campaign report so you can track enquiry volume and buyer sentiment.",
     helpVideo: {
+      url: helpVideoPlaceholderUrl,
       title: "What happens once you're live",
       durationMinutes: 6,
       description:
@@ -411,6 +422,7 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
     documentsNeeded: ["Signed contract of sale (once accepted)", "Solicitor or conveyancer details"],
     helpTip: "If the offer falls through, the campaign can return to market at any time — nothing is lost.",
     helpVideo: {
+      url: helpVideoPlaceholderUrl,
       title: "Offers and contracts, step by step",
       durationMinutes: 8,
       description:
@@ -455,6 +467,7 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
     documentsNeeded: [],
     helpTip: "You can revisit your full activity history any time from this page.",
     helpVideo: {
+      url: helpVideoPlaceholderUrl,
       title: "After settlement: what's next",
       durationMinutes: 3,
       description: "Key hand-over steps — keys, utilities, and final funds disbursement — once the sale completes.",

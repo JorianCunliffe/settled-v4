@@ -601,6 +601,14 @@ export default function SellerPortalPage() {
                     </span>
                   </div>
                   <strong>{viewMeta.helpVideo.title}</strong>
+                  {/* key remounts the player so the poster frame resets when the step changes */}
+                  <video
+                    className={styles.helpVideoPlayer}
+                    controls
+                    key={viewState}
+                    preload="metadata"
+                    src={viewMeta.helpVideo.url}
+                  />
                   <p>{viewMeta.helpVideo.description}</p>
                   {showAgentNotes && viewMeta.helpVideo.agentNotes ? (
                     <p className={styles.agentNote}>

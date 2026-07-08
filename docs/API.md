@@ -287,6 +287,91 @@ Errors:
 - `400` when `actor`, `state`, or `label` is missing/invalid, no file is provided, or the file exceeds 8MB.
 - `500` when the upload cannot be persisted.
 
+## Stage content
+
+Everything the seller portal displays for each step — labels, explainer text, tips, checklists, documents-to-upload, the help video, the guide PDF, and associated services with vendors — is configurable. Defaults are bundled with the app; saved overrides are stored per step (Postgres `stage_content` table, or in-memory without a database) and replace the default wholesale. The admin editor at `/admin/stage-content` uses these routes.
+
+### GET `/api/stage-content`
+
+Returns the effective content for all steps.
+
+Success: `200`
+
+```json
+{
+  "content": { "intake": { "label": "Seller Intake", "...": "full StageMeta per state" } },
+  "overridden": ["intake"],
+  "persistence": "memory"
+}
+```
+
+`overridden` lists the steps with saved overrides; all other steps are serving bundled defaults.
+
+### PUT `/api/stage-content`
+
+Saves an override for one step.
+
+Request body:
+
+```json
+{
+  "state": "intake",
+  "content": {
+    "label": "Seller Intake",
+    "summary": "...",
+    "accent": "#144a44",
+    "whatHappensNow": "...",
+    "helpTip": "...",
+    "documentsNeeded": ["Proof of ownership (title or rates notice)"],
+    "checklist": [{ "title": "Upload proof of ownership", "owner": "seller" }],
+    "helpVideo": { "title": "...", "durationMinutes": 4, "description": "...", "url": "/videos/help-placeholder.mp4", "agentNotes": "optional" },
+    "helpGuide": { "title": "...", "description": "...", "url": "/guides/help-guide-placeholder.pdf", "agentNotes": "optional" },
+    "associatedServices": [
+      {
+        "id": "svc-valuation",
+        "name": "Independent property valuation",
+        "category": "Valuation",
+        "description": "...",
+        "typicalCost": "$300 - $600",
+        "vendors": [{ "id": "val-opteon", "name": "Opteon Valuers", "rating": 4.8, "blurb": "..." }]
+      }
+    ]
+  }
+}
+```
+
+The full content object is required (overrides replace the default wholesale). Checklist owners must be `seller`, `agent`, or `coordinator`; vendor ratings must be 0-5.
+
+Success: `200` — returns the same envelope as `GET /api/stage-content`.
+
+Errors:
+
+- `400` with a specific message when the state is invalid or any field fails validation.
+
+### DELETE `/api/stage-content?state=intake`
+
+Removes the override for one step, restoring the bundled defaults.
+
+Success: `200` — returns the same envelope as `GET /api/stage-content`.
+
+### POST `/api/stage-content/assets`
+
+Uploads the help video or guide PDF for a step. Request is `multipart/form-data`.
+
+Fields:
+
+- `state`: one of the valid journey states
+- `kind`: `video` (any `video/*` file) or `guide` (`application/pdf`)
+- `file`: the file, up to 4MB (Vercel request body limit)
+
+Storage matches document uploads: Vercel Blob when `BLOB_READ_WRITE_TOKEN` is set, otherwise an inline base64 `data:` URL. The uploaded URL is saved into that step's content immediately.
+
+Success: `200` — the `GET /api/stage-content` envelope plus `uploadedUrl` and `assetStorage` (`"blob"` or `"inline"`).
+
+Errors:
+
+- `400` when the state/kind is invalid, the file is missing or too large, or the file type doesn't match the kind.
+
 ## Admin seller journey
 
 The admin route updates any valid state directly and records a timeline entry. It is intended for operations and testing. Add authentication and authorization before production exposure.

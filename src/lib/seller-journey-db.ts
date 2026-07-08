@@ -58,7 +58,7 @@ export function getJourneyPersistenceMode(): JourneyPersistence {
   return getConnectionString() ? "database" : "memory";
 }
 
-function getPool(): Pool | null {
+export function getPool(): Pool | null {
   const connectionString = getConnectionString();
 
   if (!connectionString) {

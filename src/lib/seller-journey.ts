@@ -81,8 +81,18 @@ export const helpVideoPlaceholderUrl = "/videos/help-placeholder.mp4";
 export interface StageHelpGuide {
   title: string;
   description: string;
+  /** Link to the guide document (PDF). Currently a shared placeholder until real guides are uploaded. */
+  url: string;
   /** Extra by-the-book guidance shown only to agents. */
   agentNotes?: string;
+}
+
+/** Shared placeholder until real per-step guide documents are uploaded. */
+export const helpGuidePlaceholderUrl = "/guides/help-guide-placeholder.pdf";
+
+export interface ChecklistTemplateItem {
+  title: string;
+  owner: JourneyActor;
 }
 
 export interface ServiceVendor {
@@ -112,6 +122,8 @@ export interface StageMeta {
   documentsNeeded: string[];
   /** A short, reassuring tip or answer to a common question at this stage. */
   helpTip: string;
+  /** The tasks to complete at this step. Done-state is tracked per journey. */
+  checklist: ChecklistTemplateItem[];
   /** The help video for this step. Every step has one. */
   helpVideo: StageHelpVideo;
   /** The document guide for this step. Every step has one. */
@@ -133,6 +145,11 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
     ],
     helpTip:
       "Not sure about pricing yet? A rough range is fine — your agent will help refine it during preparation.",
+    checklist: [
+      { title: "Confirm property address and ownership details", owner: "seller" },
+      { title: "Share sale timeframe and target price range", owner: "seller" },
+      { title: "Upload proof of ownership", owner: "seller" },
+    ],
     helpVideo: {
       url: helpVideoPlaceholderUrl,
       title: "Getting started: your sale plan",
@@ -143,6 +160,7 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
         "Cover required disclosures, note-taking, and CRM record keeping so the file is audit-ready from day one.",
     },
     helpGuide: {
+      url: helpGuidePlaceholderUrl,
       title: "Intake checklist guide",
       description:
         "A short document covering the details we ask for at this stage and why they speed up agent matching.",
@@ -182,6 +200,12 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
     documentsNeeded: [],
     helpTip:
       "Look for agents with strong recent sales in your suburb and a communication style that suits you.",
+    checklist: [
+      { title: "Review the recommended agents", owner: "seller" },
+      { title: "Compare shortlist performance by suburb and property type", owner: "coordinator" },
+      { title: "Interview your top two agents", owner: "seller" },
+      { title: "Appoint your preferred agent", owner: "seller" },
+    ],
     helpVideo: {
       url: helpVideoPlaceholderUrl,
       title: "Choosing the right agent",
@@ -192,6 +216,7 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
         "Fee transparency, conflict-of-interest disclosure, and presenting comparative market data fairly.",
     },
     helpGuide: {
+      url: helpGuidePlaceholderUrl,
       title: "Agent comparison guide",
       description:
         "A one-page worksheet for comparing shortlisted agents on results, fees, and communication style.",
@@ -218,6 +243,11 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
     documentsNeeded: ["Signed agency agreement", "Photo ID for contract verification"],
     helpTip:
       "Your agent will walk you through the agreement — ask about commission, marketing spend, and campaign length before signing.",
+    checklist: [
+      { title: "Sign the agency agreement", owner: "seller" },
+      { title: "Upload photo ID for contract verification", owner: "seller" },
+      { title: "Agree on the marketing plan and budget", owner: "agent" },
+    ],
     helpVideo: {
       url: helpVideoPlaceholderUrl,
       title: "Understanding your agency agreement",
@@ -228,6 +258,7 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
         "Cooling-off periods, commission disclosure, and the property information statements required in your state before signing.",
     },
     helpGuide: {
+      url: helpGuidePlaceholderUrl,
       title: "Agency agreement guide",
       description:
         "The clauses sellers ask about most — commission, exclusivity, term, and exit — explained in one document.",
@@ -271,6 +302,12 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
     ],
     helpTip:
       "This is the stage where small presentation improvements tend to have the biggest impact on buyer interest.",
+    checklist: [
+      { title: "Book styling and pre-listing maintenance", owner: "agent" },
+      { title: "Schedule photography and media", owner: "agent" },
+      { title: "Prepare contract of sale and disclosures", owner: "agent" },
+      { title: "Approve marketing copy and photos", owner: "seller" },
+    ],
     helpVideo: {
       url: helpVideoPlaceholderUrl,
       title: "Getting your home launch-ready",
@@ -281,6 +318,7 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
         "Underquoting law, photography and access consent, and keeping a clean paper trail before you go live.",
     },
     helpGuide: {
+      url: helpGuidePlaceholderUrl,
       title: "Preparation checklist guide",
       description:
         "Room-by-room presentation checklist plus the paperwork that must be complete before listing.",
@@ -331,6 +369,10 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
     documentsNeeded: [],
     helpTip:
       "Once live, your listing syncs automatically across connected portals — no manual re-entry needed.",
+    checklist: [
+      { title: "Give final sign-off on copy, photos, and price guide", owner: "seller" },
+      { title: "Confirm inspection times", owner: "agent" },
+    ],
     helpVideo: {
       url: helpVideoPlaceholderUrl,
       title: "Your final sign-off, explained",
@@ -340,6 +382,7 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
       agentNotes: "Final price guide accuracy check and confirming disclosure documents are attached before launch.",
     },
     helpGuide: {
+      url: helpGuidePlaceholderUrl,
       title: "Launch sign-off guide",
       description: "The final checklist covering listing copy, photography, price guide, and inspection times.",
     },
@@ -376,6 +419,10 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
     documentsNeeded: [],
     helpTip:
       "Ask your agent for a weekly campaign report so you can track enquiry volume and buyer sentiment.",
+    checklist: [
+      { title: "Share weekly campaign report with the seller", owner: "agent" },
+      { title: "Collect buyer feedback after each inspection", owner: "agent" },
+    ],
     helpVideo: {
       url: helpVideoPlaceholderUrl,
       title: "What happens once you're live",
@@ -386,6 +433,7 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
         "Fair trading obligations for presenting all offers to the seller and keeping a compliant record of enquiries.",
     },
     helpGuide: {
+      url: helpGuidePlaceholderUrl,
       title: "Campaign tracking guide",
       description: "How to read your weekly campaign report: enquiry volume, inspection numbers, and feedback themes.",
     },
@@ -421,6 +469,11 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
       "A buyer has made an offer and negotiations are underway. The campaign is moving toward closing.",
     documentsNeeded: ["Signed contract of sale (once accepted)", "Solicitor or conveyancer details"],
     helpTip: "If the offer falls through, the campaign can return to market at any time — nothing is lost.",
+    checklist: [
+      { title: "Review and respond to offer terms", owner: "seller" },
+      { title: "Confirm buyer finance and conditions", owner: "agent" },
+      { title: "Instruct solicitor or conveyancer", owner: "seller" },
+    ],
     helpVideo: {
       url: helpVideoPlaceholderUrl,
       title: "Offers and contracts, step by step",
@@ -431,6 +484,7 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
         "Cooling-off periods, special conditions, and finance clauses — what to check before a contract is signed.",
     },
     helpGuide: {
+      url: helpGuidePlaceholderUrl,
       title: "Contract conditions guide",
       description: "Finance clauses, building and pest conditions, and settlement timeframes explained in plain language.",
     },
@@ -466,6 +520,10 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
       "Congratulations — the sale is complete and settlement has occurred. Your seller journey is now archived.",
     documentsNeeded: [],
     helpTip: "You can revisit your full activity history any time from this page.",
+    checklist: [
+      { title: "Confirm receipt of settlement funds", owner: "seller" },
+      { title: "Hand over keys and property access", owner: "seller" },
+    ],
     helpVideo: {
       url: helpVideoPlaceholderUrl,
       title: "After settlement: what's next",
@@ -474,6 +532,7 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
       agentNotes: "What must be retained on file after settlement and for how long, per your state's requirements.",
     },
     helpGuide: {
+      url: helpGuidePlaceholderUrl,
       title: "Settlement hand-over guide",
       description: "A short checklist for keys, utility transfers, mail redirection, and confirming your funds.",
     },

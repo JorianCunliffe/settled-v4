@@ -13,6 +13,7 @@ import {
   type JourneyActor,
   type JourneyState,
   type SellerJourney,
+  type StageMeta,
 } from "@/lib/seller-journey";
 
 const actors: { value: JourneyActor; label: string }[] = [
@@ -77,6 +78,21 @@ async function loadJourney(): Promise<{
     journey: SellerJourney;
     persistence: JourneyPersistence;
   };
+}
+
+async function loadStageContent(): Promise<Record<JourneyState, StageMeta>> {
+  const response = await fetch("/api/stage-content", {
+    method: "GET",
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    const payload = (await response.json()) as { message?: string };
+    throw new Error(payload.message ?? "Unable to load stage content.");
+  }
+
+  const payload = (await response.json()) as { content: Record<JourneyState, StageMeta> };
+  return payload.content;
 }
 
 function getPriceFromTarget(targetPrice: string) {
@@ -226,19 +242,29 @@ export default function SellerPortalPage() {
   const [uploadingDoc, setUploadingDoc] = useState<string | null>(null);
   const [docErrors, setDocErrors] = useState<Record<string, string>>({});
   const [viewState, setViewState] = useState<JourneyState>(journey.currentState);
+  const [stageContent, setStageContent] = useState<Record<JourneyState, StageMeta>>(stateMeta);
 
   const actions = getAvailableTransitions(journey.currentState, actor);
   const totalStages = journeyStates.length;
 
   const viewIndex = journeyStates.indexOf(viewState);
-  const viewMeta = stateMeta[viewState];
+  const viewMeta = stageContent[viewState];
   const isViewingCurrent = viewState === journey.currentState;
   const canViewPrevious = viewIndex > 0;
   const canViewNext = viewIndex < totalStages - 1;
   const showAgentNotes = actor !== "seller";
 
-  const viewChecklist = journey.checklist.filter(
-    (item) => (item.state ?? journey.currentState) === viewState,
+  // Done-state lives on the journey; the task list itself comes from configurable stage content.
+  const doneByTask = new Map(
+    journey.checklist.map((item) => [`${item.state ?? journey.currentState}:${item.title}`, item.done]),
+  );
+  const viewChecklist = viewMeta.checklist.map((item) => ({
+    ...item,
+    done: doneByTask.get(`${viewState}:${item.title}`) ?? false,
+  }));
+  const totalTasks = journeyStates.reduce(
+    (sum, state) => sum + stageContent[state].checklist.length,
+    0,
   );
 
   useEffect(() => {
@@ -273,7 +299,20 @@ export default function SellerPortalPage() {
       }
     };
 
+    const hydrateContent = async () => {
+      try {
+        const content = await loadStageContent();
+
+        if (isMounted) {
+          setStageContent(content);
+        }
+      } catch {
+        // Bundled defaults stay in place if the content API is unavailable.
+      }
+    };
+
     hydrate();
+    hydrateContent();
 
     return () => {
       isMounted = false;
@@ -622,6 +661,14 @@ export default function SellerPortalPage() {
                   </div>
                   <strong>{viewMeta.helpGuide.title}</strong>
                   <p>{viewMeta.helpGuide.description}</p>
+                  <a
+                    className={styles.guideLink}
+                    href={viewMeta.helpGuide.url}
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    Open guide (PDF)
+                  </a>
                   {showAgentNotes && viewMeta.helpGuide.agentNotes ? (
                     <p className={styles.agentNote}>
                       <strong>For agents:</strong> {viewMeta.helpGuide.agentNotes}
@@ -669,7 +716,7 @@ export default function SellerPortalPage() {
               <Disclosure title="Full journey map" subtitle={`${totalStages} stages`}>
                 <div className={styles.stateRail}>
                   {journeyStates.map((state) => {
-                    const meta = stateMeta[state];
+                    const meta = stageContent[state];
                     const isActive = state === journey.currentState;
 
                     return (
@@ -696,7 +743,7 @@ export default function SellerPortalPage() {
                       <span className={styles.timelineMeta}>
                         {formatTimelineAt(entry.at)} &middot; {entry.actor}
                       </span>
-                      <strong>{stateMeta[entry.to].label}</strong>
+                      <strong>{stageContent[entry.to].label}</strong>
                       <p>{entry.note}</p>
                     </div>
                   ))}
@@ -723,12 +770,10 @@ export default function SellerPortalPage() {
                 </Disclosure>
               ) : null}
 
-              <Disclosure title="All tasks by step" subtitle={`${journey.checklist.length} total`}>
+              <Disclosure title="All tasks by step" subtitle={`${totalTasks} total`}>
                 <div className={styles.taskGroups}>
                   {journeyStates.map((state) => {
-                    const items = journey.checklist.filter(
-                      (item) => (item.state ?? journey.currentState) === state,
-                    );
+                    const items = stageContent[state].checklist;
 
                     if (items.length === 0) {
                       return null;
@@ -736,17 +781,21 @@ export default function SellerPortalPage() {
 
                     return (
                       <div key={state}>
-                        <h3 className={styles.subheading}>{stateMeta[state].label}</h3>
+                        <h3 className={styles.subheading}>{stageContent[state].label}</h3>
                         <div className={styles.checklist}>
-                          {items.map((item) => (
-                            <div key={`${state}-${item.title}`} className={styles.checklistItem}>
-                              <span className={`${styles.dot} ${item.done ? styles.dotDone : ""}`} />
-                              <div>
-                                <strong>{item.title}</strong>
-                                <p>{item.owner} owned task</p>
+                          {items.map((item) => {
+                            const done = doneByTask.get(`${state}:${item.title}`) ?? false;
+
+                            return (
+                              <div key={`${state}-${item.title}`} className={styles.checklistItem}>
+                                <span className={`${styles.dot} ${done ? styles.dotDone : ""}`} />
+                                <div>
+                                  <strong>{item.title}</strong>
+                                  <p>{item.owner} owned task</p>
+                                </div>
                               </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       </div>
                     );
@@ -757,7 +806,8 @@ export default function SellerPortalPage() {
 
             <p className={styles.footerNote}>
               Signed in as <strong>{actor}</strong> &middot; Data source: <strong>{persistence}</strong>{" "}
-              &middot; <Link href="/admin/seller-journey">Admin controls</Link>
+              &middot; <Link href="/admin/seller-journey">Admin controls</Link> &middot;{" "}
+              <Link href="/admin/stage-content">Content editor</Link>
             </p>
           </>
         )}

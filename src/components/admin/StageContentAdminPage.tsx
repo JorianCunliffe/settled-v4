@@ -456,7 +456,8 @@ export default function StageContentAdminPage() {
               <label className={styles.field}>
                 <span>
                   Each service: id, name, category, description, typicalCost, and vendors (id, name,
-                  rating 0-5, blurb)
+                  rating 0-5, blurb, url — the vendor&apos;s link; omit it to use the built-in stub
+                  page at /vendors/&lt;id&gt;)
                 </span>
                 <textarea
                   className={styles.jsonArea}

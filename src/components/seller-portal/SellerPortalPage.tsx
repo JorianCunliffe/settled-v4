@@ -7,6 +7,7 @@ import styles from "./SellerPortalPage.module.scss";
 import {
   cloneSampleJourney,
   getAvailableTransitions,
+  getVendorUrl,
   journeyStates,
   stateMeta,
   type JourneyPersistence,
@@ -695,13 +696,16 @@ export default function SellerPortalPage() {
                       <span className={styles.serviceCost}>{service.typicalCost}</span>
                       <div className={styles.vendorList}>
                         {service.vendors.map((vendor) => (
-                          <div className={styles.vendorItem} key={vendor.id}>
+                          <Link className={styles.vendorItem} href={getVendorUrl(vendor)} key={vendor.id}>
                             <div>
                               <strong>{vendor.name}</strong>
                               <p>{vendor.blurb}</p>
                             </div>
-                            <span className={styles.rating}>{vendor.rating.toFixed(1)}</span>
-                          </div>
+                            <span className={styles.vendorAction}>
+                              <span className={styles.rating}>{vendor.rating.toFixed(1)}</span>
+                              View &amp; enquire ›
+                            </span>
+                          </Link>
                         ))}
                       </div>
                     </div>

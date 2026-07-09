@@ -591,10 +591,20 @@
   background: rgba(21, 58, 53, 0.04);
   border: 1px solid rgba(21, 58, 53, 0.08);
   border-radius: 12px;
+  color: inherit;
   display: flex;
   gap: 12px;
   justify-content: space-between;
   padding: 10px 14px;
+  text-decoration: none;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.vendorItem:hover {
+  box-shadow: 0 8px 20px rgba(21, 58, 53, 0.12);
+  transform: translateY(-1px);
 }
 
 .vendorItem strong {
@@ -606,6 +616,17 @@
   color: #516059;
   font-size: 0.82rem;
   margin: 0;
+}
+
+.vendorAction {
+  align-items: flex-end;
+  color: #153a35;
+  display: grid;
+  flex-shrink: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  gap: 2px;
+  text-align: right;
 }
 
 .taskGroups {

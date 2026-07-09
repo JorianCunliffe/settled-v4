@@ -127,6 +127,30 @@ export function isJourneyState(value: unknown): value is JourneyState {
   return typeof value === "string" && (journeyStates as string[]).includes(value);
 }
 
+export interface VendorLookup {
+  vendor: ServiceVendor;
+  service: AssociatedService;
+  state: JourneyState;
+  stageLabel: string;
+}
+
+/** Finds a vendor across all steps' configured services. */
+export async function findVendorById(vendorId: string): Promise<VendorLookup | null> {
+  const { content } = await loadStageContent();
+
+  for (const state of journeyStates) {
+    for (const service of content[state].associatedServices) {
+      const vendor = service.vendors.find((candidate) => candidate.id === vendorId);
+
+      if (vendor) {
+        return { vendor, service, state, stageLabel: content[state].label };
+      }
+    }
+  }
+
+  return null;
+}
+
 const journeyActors: JourneyActor[] = ["seller", "agent", "coordinator"];
 
 function isNonEmptyString(value: unknown): value is string {
@@ -229,15 +253,17 @@ export function validateStageContent(input: unknown): StageMeta | string {
         typeof vendor?.rating !== "number" ||
         !Number.isFinite(vendor.rating) ||
         vendor.rating < 0 ||
-        vendor.rating > 5
+        vendor.rating > 5 ||
+        !isOptionalString(vendor?.url)
       ) {
-        return 'Each vendor needs id, name, blurb, and a rating between 0 and 5.';
+        return 'Each vendor needs id, name, blurb, a rating between 0 and 5, and optionally a url.';
       }
       vendors.push({
         id: vendor.id as string,
         name: vendor.name as string,
         blurb: vendor.blurb as string,
         rating: vendor.rating,
+        ...(isNonEmptyString(vendor.url) ? { url: vendor.url } : {}),
       });
     }
 

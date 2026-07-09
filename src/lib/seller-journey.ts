@@ -100,6 +100,16 @@ export interface ServiceVendor {
   name: string;
   rating: number;
   blurb: string;
+  /**
+   * Link to the vendor's page. Defaults to the internal stub profile at
+   * /vendors/<id>; will point into the partner network once integrated.
+   */
+  url?: string;
+}
+
+/** Resolves a vendor's link, falling back to the internal stub profile page. */
+export function getVendorUrl(vendor: ServiceVendor): string {
+  return vendor.url ?? `/vendors/${vendor.id}`;
 }
 
 export interface AssociatedService {
@@ -174,8 +184,8 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
         description: "A formal valuation to sanity-check the target price range before agent matching.",
         typicalCost: "$300 - $600",
         vendors: [
-          { id: "val-opteon", name: "Opteon Valuers", rating: 4.8, blurb: "Fast turnaround, Brisbane-wide coverage." },
-          { id: "val-herron", name: "Herron Todd White", rating: 4.7, blurb: "Detailed reports accepted by all major lenders." },
+          { id: "val-opteon", name: "Opteon Valuers", rating: 4.8, blurb: "Fast turnaround, Brisbane-wide coverage.", url: "/vendors/val-opteon" },
+          { id: "val-herron", name: "Herron Todd White", rating: 4.7, blurb: "Detailed reports accepted by all major lenders.", url: "/vendors/val-herron" },
         ],
       },
       {
@@ -185,8 +195,8 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
         description: "Title search and contract preparation started early so it's ready once an agent is appointed.",
         typicalCost: "$400 - $800",
         vendors: [
-          { id: "leg-conveyworks", name: "ConveyWorks", rating: 4.9, blurb: "Fixed-fee packs with 48-hour turnaround." },
-          { id: "leg-bne-property-law", name: "Brisbane Property Law", rating: 4.6, blurb: "Solicitor-led, good for complex titles." },
+          { id: "leg-conveyworks", name: "ConveyWorks", rating: 4.9, blurb: "Fixed-fee packs with 48-hour turnaround.", url: "/vendors/leg-conveyworks" },
+          { id: "leg-bne-property-law", name: "Brisbane Property Law", rating: 4.6, blurb: "Solicitor-led, good for complex titles.", url: "/vendors/leg-bne-property-law" },
         ],
       },
     ],
@@ -229,7 +239,7 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
         description: "A detailed report on recent comparable sales, prepared by the shortlisted agents.",
         typicalCost: "Usually free with a listing",
         vendors: [
-          { id: "cma-shortlist", name: "Your shortlisted agents", rating: 4.8, blurb: "Each candidate prepares one as part of their pitch." },
+          { id: "cma-shortlist", name: "Your shortlisted agents", rating: 4.8, blurb: "Each candidate prepares one as part of their pitch.", url: "/vendors/cma-shortlist" },
         ],
       },
     ],
@@ -272,8 +282,8 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
         description: "Premium portal placement, print collateral, and social campaign add-ons for the agreement.",
         typicalCost: "$800 - $2,500",
         vendors: [
-          { id: "mkt-campaigntrack", name: "CampaignTrack", rating: 4.7, blurb: "Bundled portal + print + social packages." },
-          { id: "mkt-realhub", name: "Realhub", rating: 4.6, blurb: "Flexible à la carte marketing add-ons." },
+          { id: "mkt-campaigntrack", name: "CampaignTrack", rating: 4.7, blurb: "Bundled portal + print + social packages.", url: "/vendors/mkt-campaigntrack" },
+          { id: "mkt-realhub", name: "Realhub", rating: 4.6, blurb: "Flexible à la carte marketing add-ons.", url: "/vendors/mkt-realhub" },
         ],
       },
       {
@@ -283,8 +293,8 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
         description: "Licensed photographer booking bundled into the marketing plan.",
         typicalCost: "$350 - $600",
         vendors: [
-          { id: "photo-topsnap", name: "Top Snap", rating: 4.8, blurb: "Twilight and elevated shots included." },
-          { id: "photo-urbanangles", name: "Urban Angles", rating: 4.9, blurb: "Premium editorial style, 48-hour delivery." },
+          { id: "photo-topsnap", name: "Top Snap", rating: 4.8, blurb: "Twilight and elevated shots included.", url: "/vendors/photo-topsnap" },
+          { id: "photo-urbanangles", name: "Urban Angles", rating: 4.9, blurb: "Premium editorial style, 48-hour delivery.", url: "/vendors/photo-urbanangles" },
         ],
       },
     ],
@@ -332,8 +342,8 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
         description: "Furniture and styling hire to present the property at its best for photography and inspections.",
         typicalCost: "$1,500 - $4,000",
         vendors: [
-          { id: "style-bowerbird", name: "BOWERBIRD Interiors", rating: 4.8, blurb: "Full and partial staging packages." },
-          { id: "style-coco", name: "Coco Republic Styling", rating: 4.7, blurb: "Premium furniture, strong for character homes." },
+          { id: "style-bowerbird", name: "BOWERBIRD Interiors", rating: 4.8, blurb: "Full and partial staging packages.", url: "/vendors/style-bowerbird" },
+          { id: "style-coco", name: "Coco Republic Styling", rating: 4.7, blurb: "Premium furniture, strong for character homes.", url: "/vendors/style-coco" },
         ],
       },
       {
@@ -343,8 +353,8 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
         description: "An upfront report so surprises don't stall negotiations later.",
         typicalCost: "$400 - $700",
         vendors: [
-          { id: "insp-jims", name: "Jim's Building Inspections", rating: 4.6, blurb: "Same-week bookings, combined reports." },
-          { id: "insp-bpi", name: "BPI Brisbane", rating: 4.8, blurb: "Thermal imaging included as standard." },
+          { id: "insp-jims", name: "Jim's Building Inspections", rating: 4.6, blurb: "Same-week bookings, combined reports.", url: "/vendors/insp-jims" },
+          { id: "insp-bpi", name: "BPI Brisbane", rating: 4.8, blurb: "Thermal imaging included as standard.", url: "/vendors/insp-bpi" },
         ],
       },
       {
@@ -354,8 +364,8 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
         description: "Small fixes — touch-up paint, loose fittings, garden tidy — before photography day.",
         typicalCost: "Varies by scope",
         vendors: [
-          { id: "trade-hire-hubby", name: "Hire A Hubby", rating: 4.5, blurb: "Broad coverage, quick quotes." },
-          { id: "trade-local", name: "Settled vetted local trades", rating: 4.7, blurb: "Pre-vetted tradies coordinated by your agent." },
+          { id: "trade-hire-hubby", name: "Hire A Hubby", rating: 4.5, blurb: "Broad coverage, quick quotes.", url: "/vendors/trade-hire-hubby" },
+          { id: "trade-local", name: "Settled vetted local trades", rating: 4.7, blurb: "Pre-vetted tradies coordinated by your agent.", url: "/vendors/trade-local" },
         ],
       },
     ],
@@ -394,8 +404,8 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
         description: "Featured or highlighted placement on major listing portals for launch week.",
         typicalCost: "$300 - $900",
         vendors: [
-          { id: "portal-rea", name: "realestate.com.au Premiere", rating: 4.7, blurb: "Largest buyer audience in Australia." },
-          { id: "portal-domain", name: "Domain Platinum", rating: 4.6, blurb: "Strong inner-city and premium reach." },
+          { id: "portal-rea", name: "realestate.com.au Premiere", rating: 4.7, blurb: "Largest buyer audience in Australia.", url: "/vendors/portal-rea" },
+          { id: "portal-domain", name: "Domain Platinum", rating: 4.6, blurb: "Strong inner-city and premium reach.", url: "/vendors/portal-domain" },
         ],
       },
       {
@@ -405,7 +415,7 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
         description: "Street signage and printed brochures for inspections.",
         typicalCost: "$150 - $400",
         vendors: [
-          { id: "print-sign-fast", name: "SignFast", rating: 4.5, blurb: "Photo boards installed within 3 days." },
+          { id: "print-sign-fast", name: "SignFast", rating: 4.5, blurb: "Photo boards installed within 3 days.", url: "/vendors/print-sign-fast" },
         ],
       },
     ],
@@ -445,8 +455,8 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
         description: "Paid social promotion to extend reach beyond the portals during the live campaign.",
         typicalCost: "$200 - $600",
         vendors: [
-          { id: "social-idashboard", name: "iDashboard Social", rating: 4.5, blurb: "Targeted local buyer audiences." },
-          { id: "social-propps", name: "Propps Digital", rating: 4.6, blurb: "Retargeting for portal viewers." },
+          { id: "social-idashboard", name: "iDashboard Social", rating: 4.5, blurb: "Targeted local buyer audiences.", url: "/vendors/social-idashboard" },
+          { id: "social-propps", name: "Propps Digital", rating: 4.6, blurb: "Retargeting for portal viewers.", url: "/vendors/social-propps" },
         ],
       },
       {
@@ -456,7 +466,7 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
         description: "A walkthrough video or aerial footage to support online listings.",
         typicalCost: "$400 - $900",
         vendors: [
-          { id: "drone-skyshots", name: "SkyShots Media", rating: 4.7, blurb: "CASA-licensed drone operators." },
+          { id: "drone-skyshots", name: "SkyShots Media", rating: 4.7, blurb: "CASA-licensed drone operators.", url: "/vendors/drone-skyshots" },
         ],
       },
     ],
@@ -496,8 +506,8 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
         description: "Manages the legal transfer of ownership through to settlement.",
         typicalCost: "$800 - $1,500",
         vendors: [
-          { id: "conv-bytherules", name: "Bytherules Conveyancing", rating: 4.8, blurb: "Fixed fee, fully online process." },
-          { id: "conv-rivercity", name: "River City Conveyancing", rating: 4.7, blurb: "Local team, strong on tight settlements." },
+          { id: "conv-bytherules", name: "Bytherules Conveyancing", rating: 4.8, blurb: "Fixed fee, fully online process.", url: "/vendors/conv-bytherules" },
+          { id: "conv-rivercity", name: "River City Conveyancing", rating: 4.7, blurb: "Local team, strong on tight settlements.", url: "/vendors/conv-rivercity" },
         ],
       },
       {
@@ -507,7 +517,7 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
         description: "Certificate confirming any structures on the property meet approval requirements.",
         typicalCost: "$200 - $500",
         vendors: [
-          { id: "cert-certifygroup", name: "The Certifier Group", rating: 4.6, blurb: "Pool and structure certifications." },
+          { id: "cert-certifygroup", name: "The Certifier Group", rating: 4.6, blurb: "Pool and structure certifications.", url: "/vendors/cert-certifygroup" },
         ],
       },
     ],
@@ -544,8 +554,8 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
         description: "Vetted removalist partners for moving day.",
         typicalCost: "Quoted directly by provider",
         vendors: [
-          { id: "move-2men", name: "Two Men and a Truck", rating: 4.5, blurb: "Flexible short-notice bookings." },
-          { id: "move-allied", name: "Allied Moving Services", rating: 4.6, blurb: "Full pack-and-move service." },
+          { id: "move-2men", name: "Two Men and a Truck", rating: 4.5, blurb: "Flexible short-notice bookings.", url: "/vendors/move-2men" },
+          { id: "move-allied", name: "Allied Moving Services", rating: 4.6, blurb: "Full pack-and-move service.", url: "/vendors/move-allied" },
         ],
       },
       {
@@ -555,7 +565,7 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
         description: "Free service to transfer or disconnect electricity, gas, and internet.",
         typicalCost: "Free",
         vendors: [
-          { id: "util-myconnect", name: "MyConnect", rating: 4.7, blurb: "One call moves every service." },
+          { id: "util-myconnect", name: "MyConnect", rating: 4.7, blurb: "One call moves every service.", url: "/vendors/util-myconnect" },
         ],
       },
     ],

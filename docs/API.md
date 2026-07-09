@@ -340,7 +340,7 @@ Request body:
 }
 ```
 
-The full content object is required (overrides replace the default wholesale). Checklist owners must be `seller`, `agent`, or `coordinator`; vendor ratings must be 0-5.
+The full content object is required (overrides replace the default wholesale). Checklist owners must be `seller`, `agent`, or `coordinator`; vendor ratings must be 0-5. Each vendor may include an optional `url` — the link opened from the seller portal. When omitted, the portal links to the built-in stub profile page at `/vendors/<vendorId>`, which shows the vendor's details and a lead-capture enquiry form (currently a stub; enquiries will route into the partner network once integrated).
 
 Success: `200` — returns the same envelope as `GET /api/stage-content`.
 

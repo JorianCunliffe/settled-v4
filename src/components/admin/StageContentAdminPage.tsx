@@ -278,6 +278,7 @@ export default function StageContentAdminPage() {
           <nav className={styles.headerLinks}>
             <Link href="/sell">Seller portal</Link>
             <Link href="/admin/seller-journey">Journey admin</Link>
+            <Link href="/admin/member-organisations">Member organisations</Link>
           </nav>
         </header>
 

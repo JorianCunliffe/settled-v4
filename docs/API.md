@@ -372,6 +372,42 @@ Errors:
 
 - `400` when the state/kind is invalid, the file is missing or too large, or the file type doesn't match the kind.
 
+## Member organisations
+
+Sellers indicate their professional organisation or union at sign-up. Members of **partner** organisations use Settled free; everyone else pays $99/month (billing integration pending — see `docs/ROADMAP.md`). Managed in the admin UI at `/admin/member-organisations`. Seeded with sample organisations on first use.
+
+### GET `/api/member-organisations`
+
+Returns all organisations sorted by name.
+
+```json
+{
+  "organisations": [
+    {
+      "id": "org-reiq",
+      "name": "Real Estate Institute of Queensland (REIQ)",
+      "type": "industry-body",
+      "partner": true,
+      "notes": "Founding partner — members receive Settled at no cost.",
+      "createdAt": "2026-07-08T00:00:00.000Z"
+    }
+  ],
+  "persistence": "memory"
+}
+```
+
+### POST `/api/member-organisations`
+
+Creates an organisation. Body: `name` (required), `type` (`union`, `industry-body`, or `professional-association`), `partner` (boolean), `notes` (optional string). Success: `201` with the full list envelope.
+
+### PUT `/api/member-organisations/[id]`
+
+Updates an organisation with the same body/validation as create. `404` when the id doesn't exist.
+
+### DELETE `/api/member-organisations/[id]`
+
+Deletes an organisation. `404` when the id doesn't exist.
+
 ## Admin seller journey
 
 The admin route updates any valid state directly and records a timeline entry. It is intended for operations and testing. Add authentication and authorization before production exposure.

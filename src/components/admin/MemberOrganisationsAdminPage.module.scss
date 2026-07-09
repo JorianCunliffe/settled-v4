@@ -1,0 +1,225 @@
+.page {
+  background: linear-gradient(180deg, #f6f1e7 0%, #fffaf4 50%, #eef2eb 100%);
+  color: #16211d;
+  min-height: 100vh;
+}
+
+.container {
+  margin: 0 auto;
+  max-width: 880px;
+  padding: 32px 20px 80px;
+}
+
+.header {
+  align-items: flex-start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.header h1 {
+  font-family: "EB Garamond", serif;
+  font-size: 2.2rem;
+  margin: 0 0 8px;
+}
+
+.header p {
+  color: #516059;
+  margin: 0;
+  max-width: 56ch;
+}
+
+.headerLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.headerLinks a {
+  color: #153a35;
+  font-weight: 700;
+}
+
+.note {
+  color: #6b746f;
+  font-size: 0.9rem;
+  margin: 0 0 16px;
+}
+
+.panel {
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(22, 33, 29, 0.08);
+  border-radius: 20px;
+  margin-bottom: 16px;
+  padding: 20px;
+}
+
+.panel h2 {
+  font-size: 1.05rem;
+  margin: 0 0 14px;
+}
+
+.form {
+  display: grid;
+  gap: 12px;
+}
+
+.fieldRow {
+  align-items: end;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+}
+
+.field span {
+  color: #55635d;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.field input,
+.field select {
+  background: #fff;
+  border: 1px solid rgba(22, 33, 29, 0.15);
+  border-radius: 10px;
+  font: inherit;
+  padding: 10px 12px;
+  width: 100%;
+}
+
+.checkboxField {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  padding-bottom: 10px;
+}
+
+.checkboxField input {
+  height: 18px;
+  width: 18px;
+}
+
+.checkboxField em {
+  color: #55635d;
+  font-style: normal;
+  font-size: 0.85rem;
+}
+
+.formActions {
+  display: flex;
+  gap: 10px;
+}
+
+.saveButton {
+  background: #153a35;
+  border: 0;
+  border-radius: 999px;
+  box-shadow: 0 12px 24px rgba(21, 58, 53, 0.2);
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  padding: 11px 20px;
+}
+
+.ghostButton {
+  background: rgba(21, 58, 53, 0.08);
+  border: 0;
+  border-radius: 999px;
+  color: #153a35;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  padding: 11px 18px;
+}
+
+.dangerButton {
+  background: rgba(139, 46, 58, 0.1);
+  border: 0;
+  border-radius: 999px;
+  color: #8b2e3a;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  padding: 11px 18px;
+}
+
+.statusOk {
+  color: #23613e;
+  font-weight: 700;
+  margin: 0 0 12px;
+}
+
+.statusError {
+  color: #8b2e3a;
+  font-weight: 700;
+  margin: 0 0 12px;
+}
+
+.list {
+  display: grid;
+  gap: 10px;
+}
+
+.orgCard {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(22, 33, 29, 0.08);
+  border-radius: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 16px 18px;
+}
+
+.orgInfo p {
+  color: #516059;
+  font-size: 0.88rem;
+  margin: 4px 0 0;
+}
+
+.orgTitleRow {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.partnerBadge,
+.standardBadge {
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  text-transform: uppercase;
+}
+
+.partnerBadge {
+  background: rgba(35, 97, 62, 0.1);
+  color: #23613e;
+}
+
+.standardBadge {
+  background: rgba(139, 90, 32, 0.12);
+  color: #8b5a20;
+}
+
+.orgActions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 8px;
+}
+
+@media (max-width: 640px) {
+  .fieldRow {
+    grid-template-columns: 1fr;
+  }
+}

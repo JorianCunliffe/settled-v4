@@ -405,9 +405,50 @@
 }
 
 .actorTabs {
+  align-items: center;
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.demoChip {
+  background: rgba(219, 179, 94, 0.2);
+  border-radius: 999px;
+  color: #8b5a20;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 5px 10px;
+  text-transform: uppercase;
+}
+
+.accountChip {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+}
+
+.accountChip strong {
+  display: block;
+  font-size: 0.95rem;
+}
+
+.accountChip em {
+  color: #55635d;
+  display: block;
+  font-size: 0.8rem;
+  font-style: normal;
+}
+
+.signOutButton {
+  background: rgba(21, 58, 53, 0.08);
+  border: 0;
+  border-radius: 999px;
+  color: #153a35;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 8px 14px;
 }
 
 .actorTab,

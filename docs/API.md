@@ -15,7 +15,29 @@ The app uses Postgres when one of `DATABASE_URL`, `POSTGRES_URL`, or `POSTGRES_P
 
 Seller journey document uploads additionally use [Vercel Blob](https://vercel.com/docs/storage/vercel-blob) when `BLOB_READ_WRITE_TOKEN` is set. Otherwise uploaded files are inlined as base64 `data:` URLs alongside the journey record (fine for demos, not for production-scale files).
 
-## Auth
+## Phone auth (primary sign-in)
+
+Phone-first OTP sign-in. In **demo mode** (no configuration — see `.env.example`) the flow works end-to-end with the fixed code `123456` and no SMS is sent; `/sell` and `/admin/*` stay open without a session and the role switcher remains available. In **live mode** (Twilio Verify + `AUTH_SECRET` configured, or `DEMO_MODE=false`) codes are sent via Twilio Verify, middleware redirects unauthenticated visitors to `/signin`, and `/admin/*` requires the `admin` role (bootstrapped via `ADMIN_PHONES`).
+
+### POST `/api/auth/phone/start`
+
+Body: `{ "phone": "0400 123 456" }` (AU local formats are normalised to E.164). Sends the OTP (or returns `demo: true` without sending). Rate limited to 5 codes per phone per hour per instance. Errors: `400` invalid phone, `429` rate limited, `502` SMS provider failure.
+
+### POST `/api/auth/phone/check`
+
+Body: `{ "phone", "code", "name?", "organisationId?" }`. Verifies the code (Twilio Verify check, or `123456` in demo mode), creates/updates the user keyed by phone, computes entitlement (`partner` when the organisation is a partner; otherwise `subscribed` or `payment_required` — billing pending), and sets the `settled_session` JWT cookie (7 days). Returns `{ user, demo }`. Errors: `401` wrong code, `502` provider failure.
+
+### GET `/api/auth/session`
+
+Returns `{ user: SessionUser | null, demo: boolean }` for the current cookie.
+
+### POST `/api/auth/logout`
+
+Clears the session cookie.
+
+## Legacy email auth
+
+The routes below predate phone sign-in and remain for reference.
 
 ### POST `/api/auth/signup`
 

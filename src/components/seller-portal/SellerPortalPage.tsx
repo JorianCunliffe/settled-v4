@@ -16,6 +16,7 @@ import {
   type SellerJourney,
   type StageMeta,
 } from "@/lib/seller-journey";
+import type { SessionUser } from "@/lib/session";
 
 const actors: { value: JourneyActor; label: string }[] = [
   { value: "seller", label: "Seller" },
@@ -244,6 +245,8 @@ export default function SellerPortalPage() {
   const [docErrors, setDocErrors] = useState<Record<string, string>>({});
   const [viewState, setViewState] = useState<JourneyState>(journey.currentState);
   const [stageContent, setStageContent] = useState<Record<JourneyState, StageMeta>>(stateMeta);
+  const [sessionUser, setSessionUser] = useState<SessionUser | null>(null);
+  const [isDemo, setIsDemo] = useState(true);
 
   const actions = getAvailableTransitions(journey.currentState, actor);
   const totalStages = journeyStates.length;
@@ -312,8 +315,28 @@ export default function SellerPortalPage() {
       }
     };
 
+    const hydrateSession = async () => {
+      try {
+        const response = await fetch("/api/auth/session", { cache: "no-store" });
+        const payload = (await response.json()) as { user: SessionUser | null; demo: boolean };
+
+        if (isMounted) {
+          setSessionUser(payload.user);
+          setIsDemo(payload.demo);
+
+          // In live mode the perspective comes from the signed-in account.
+          if (!payload.demo && payload.user) {
+            setActor(payload.user.role === "admin" ? "coordinator" : payload.user.role);
+          }
+        }
+      } catch {
+        // Treat session lookup failures as demo/anonymous.
+      }
+    };
+
     hydrate();
     hydrateContent();
+    hydrateSession();
 
     return () => {
       isMounted = false;
@@ -424,18 +447,42 @@ export default function SellerPortalPage() {
             <strong>{journey.propertyAddress}</strong>
             <span>{journey.targetPrice}</span>
           </div>
-          <div className={styles.actorTabs}>
-            {actors.map((item) => (
+          {isDemo ? (
+            <div className={styles.actorTabs}>
+              <span className={styles.demoChip}>Demo</span>
+              {actors.map((item) => (
+                <button
+                  key={item.value}
+                  className={`${styles.actorTab} ${actor === item.value ? styles.actorTabActive : ""}`}
+                  onClick={() => setActor(item.value)}
+                  type="button"
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className={styles.accountChip}>
+              <span>
+                <strong>{sessionUser?.name || sessionUser?.phone || "Signed in"}</strong>
+                {sessionUser?.organisationName ? (
+                  <em>{sessionUser.organisationName}</em>
+                ) : sessionUser?.entitlement === "payment_required" ? (
+                  <em>Subscription pending — $99/month</em>
+                ) : null}
+              </span>
               <button
-                key={item.value}
-                className={`${styles.actorTab} ${actor === item.value ? styles.actorTabActive : ""}`}
-                onClick={() => setActor(item.value)}
+                className={styles.signOutButton}
+                onClick={async () => {
+                  await fetch("/api/auth/logout", { method: "POST" });
+                  window.location.href = "/signin";
+                }}
                 type="button"
               >
-                {item.label}
+                Sign out
               </button>
-            ))}
-          </div>
+            </div>
+          )}
         </header>
 
         {isLoading ? (

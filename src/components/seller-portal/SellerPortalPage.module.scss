@@ -41,6 +41,13 @@
   font-size: 0.92rem;
 }
 
+.topBarActions {
+  align-items: flex-end;
+  display: grid;
+  gap: 8px;
+  justify-items: end;
+}
+
 .loadingNote {
   color: #55635d;
   padding: 40px 0;

@@ -24,6 +24,12 @@ const actors: { value: JourneyActor; label: string }[] = [
   { value: "coordinator", label: "Concierge" },
 ];
 
+const roleSwitcherEnabled = process.env.NEXT_PUBLIC_ROLE_SWITCHER !== "false";
+
+function isJourneyActor(value: string | null): value is JourneyActor {
+  return actors.some((item) => item.value === value);
+}
+
 const timelineFormatter = new Intl.DateTimeFormat("en-AU", {
   dateStyle: "medium",
   timeStyle: "short",
@@ -324,8 +330,16 @@ export default function SellerPortalPage() {
           setSessionUser(payload.user);
           setIsDemo(payload.demo);
 
-          // In live mode the perspective comes from the signed-in account.
-          if (!payload.demo && payload.user) {
+          const requestedRole = roleSwitcherEnabled
+            ? new URLSearchParams(window.location.search).get("role")
+            : null;
+
+          // During development the URL/role switcher can override the signed-in
+          // account perspective. Set NEXT_PUBLIC_ROLE_SWITCHER=false to restore
+          // production-style role locking.
+          if (isJourneyActor(requestedRole)) {
+            setActor(requestedRole);
+          } else if (!payload.demo && payload.user) {
             setActor(payload.user.role === "admin" ? "coordinator" : payload.user.role);
           }
         }
@@ -342,6 +356,16 @@ export default function SellerPortalPage() {
       isMounted = false;
     };
   }, []);
+
+  const handleActorChange = (nextActor: JourneyActor) => {
+    setActor(nextActor);
+
+    if (roleSwitcherEnabled) {
+      const url = new URL(window.location.href);
+      url.searchParams.set("role", nextActor);
+      window.history.replaceState({}, "", url.toString());
+    }
+  };
 
   const handleAction = async (to: JourneyState) => {
     setIsSubmitting(true);
@@ -447,42 +471,46 @@ export default function SellerPortalPage() {
             <strong>{journey.propertyAddress}</strong>
             <span>{journey.targetPrice}</span>
           </div>
-          {isDemo ? (
-            <div className={styles.actorTabs}>
-              <span className={styles.demoChip}>Demo</span>
-              {actors.map((item) => (
+          <div className={styles.topBarActions}>
+            {!isDemo ? (
+              <div className={styles.accountChip}>
+                <span>
+                  <strong>{sessionUser?.name || sessionUser?.phone || "Signed in"}</strong>
+                  {sessionUser?.organisationName ? (
+                    <em>{sessionUser.organisationName}</em>
+                  ) : sessionUser?.entitlement === "payment_required" ? (
+                    <em>Subscription pending — $99/month</em>
+                  ) : null}
+                </span>
                 <button
-                  key={item.value}
-                  className={`${styles.actorTab} ${actor === item.value ? styles.actorTabActive : ""}`}
-                  onClick={() => setActor(item.value)}
+                  className={styles.signOutButton}
+                  onClick={async () => {
+                    await fetch("/api/auth/logout", { method: "POST" });
+                    window.location.href = "/signin";
+                  }}
                   type="button"
                 >
-                  {item.label}
+                  Sign out
                 </button>
-              ))}
-            </div>
-          ) : (
-            <div className={styles.accountChip}>
-              <span>
-                <strong>{sessionUser?.name || sessionUser?.phone || "Signed in"}</strong>
-                {sessionUser?.organisationName ? (
-                  <em>{sessionUser.organisationName}</em>
-                ) : sessionUser?.entitlement === "payment_required" ? (
-                  <em>Subscription pending — $99/month</em>
-                ) : null}
-              </span>
-              <button
-                className={styles.signOutButton}
-                onClick={async () => {
-                  await fetch("/api/auth/logout", { method: "POST" });
-                  window.location.href = "/signin";
-                }}
-                type="button"
-              >
-                Sign out
-              </button>
-            </div>
-          )}
+              </div>
+            ) : null}
+
+            {roleSwitcherEnabled || isDemo ? (
+              <div className={styles.actorTabs}>
+                <span className={styles.demoChip}>{isDemo ? "Demo" : "Development"}</span>
+                {actors.map((item) => (
+                  <button
+                    key={item.value}
+                    className={`${styles.actorTab} ${actor === item.value ? styles.actorTabActive : ""}`}
+                    onClick={() => handleActorChange(item.value)}
+                    type="button"
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
         </header>
 
         {isLoading ? (
@@ -856,7 +884,7 @@ export default function SellerPortalPage() {
             </section>
 
             <p className={styles.footerNote}>
-              Signed in as <strong>{actor}</strong> &middot; Data source: <strong>{persistence}</strong>{" "}
+              Viewing as <strong>{actor}</strong> &middot; Data source: <strong>{persistence}</strong>{" "}
               &middot; <Link href="/admin/seller-journey">Admin controls</Link> &middot;{" "}
               <Link href="/admin/stage-content">Content editor</Link>
             </p>

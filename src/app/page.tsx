@@ -1,11 +1,14 @@
-import SellerPortalPage from "@/components/seller-portal/SellerPortalPage";
+import LandingPage from "@/components/landing/LandingPage";
 
 export const metadata = {
-  title: "Settled | Seller Portal",
+  title: "Settled | Every step of the sale, in one place",
   description:
-    "A seller-guided property portal based on Hozn, reworked for Vercel deployment and state-driven sale operations.",
+    "Settled guides home sellers and their agents through every step of the sale, from the first conversation to settlement.",
 };
 
+// Demo vs live is read from the environment at request time.
+export const dynamic = "force-dynamic";
+
 export default function HomePage() {
-  return <SellerPortalPage />;
+  return <LandingPage />;
 }

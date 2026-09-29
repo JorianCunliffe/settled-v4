@@ -748,6 +748,60 @@ export function getAvailableTransitions(
   return actor ? options.filter((option) => option.actor === actor) : options;
 }
 
+export function isForwardTransition(from: JourneyState, option: TransitionOption): boolean {
+  return journeyStates.indexOf(option.to) > journeyStates.indexOf(from);
+}
+
+/** The move that advances the sale from this step, and who makes it. */
+export function getForwardTransition(state: JourneyState): TransitionOption | null {
+  return getAvailableTransitions(state).find((option) => isForwardTransition(state, option)) ?? null;
+}
+
+export const actorLabels: Record<JourneyActor, string> = {
+  seller: "Seller",
+  agent: "Agent",
+  coordinator: "Concierge",
+};
+
+/**
+ * The sample sale fast-forwarded to `startState`, used to reset a demo to the
+ * right step for each side. Timestamps are rebased to the recent past.
+ */
+export function buildDemoJourney(startState: JourneyState): SellerJourney {
+  const journey = cloneSampleJourney();
+  const timeline = journey.timeline.map((entry) => ({ ...entry }));
+  let state = journey.currentState;
+
+  while (journeyStates.indexOf(state) < journeyStates.indexOf(startState)) {
+    const next = getForwardTransition(state);
+
+    if (!next) {
+      break;
+    }
+
+    const appointed = journey.agentCandidates[0];
+    timeline.push({
+      at: "",
+      actor: next.actor,
+      from: state,
+      to: next.to,
+      note:
+        next.to === "agent_appointed" && appointed
+          ? `${journey.sellerName} appointed ${appointed.name} to represent the property.`
+          : next.detail,
+    });
+    state = next.to;
+  }
+
+  const dayMs = 24 * 60 * 60 * 1000;
+  const now = Date.now();
+  timeline.forEach((entry, index) => {
+    entry.at = new Date(now - (timeline.length - index) * dayMs).toISOString();
+  });
+
+  return { ...journey, currentState: state, timeline };
+}
+
 export function canTransition(
   from: JourneyState,
   to: JourneyState,

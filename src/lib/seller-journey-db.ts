@@ -1,6 +1,7 @@
 import { randomUUID } from "crypto";
 import { Pool, type PoolClient } from "pg";
 import {
+  buildDemoJourney,
   cloneSampleJourney,
   transitionJourney,
   type JourneyActor,
@@ -203,9 +204,7 @@ function hydrateJourney(
   };
 }
 
-async function seedJourney(client: PoolClient) {
-  const seeded = cloneSampleJourney();
-
+async function seedJourney(client: PoolClient, seeded: SellerJourney = cloneSampleJourney()) {
   await client.query(
     `
       INSERT INTO seller_journeys (
@@ -345,6 +344,38 @@ export async function loadJourney(journeyId?: string): Promise<{
       journey: journey ?? cloneSampleJourney(),
       persistence: "database",
     };
+  } finally {
+    client.release();
+  }
+}
+
+/** Replaces the sample sale with a fresh copy starting at `startState`, for demo resets. */
+export async function resetStoredJourney(startState: JourneyState): Promise<{
+  journey: SellerJourney;
+  persistence: JourneyPersistence;
+}> {
+  const journey = buildDemoJourney(startState);
+  const pool = getPool();
+
+  if (!pool) {
+    saveMemoryJourney(journey);
+    return { journey: cloneJourney(journey), persistence: "memory" };
+  }
+
+  const client = await pool.connect();
+
+  try {
+    await ensureSchema(client);
+    await client.query("BEGIN");
+    // Events and documents cascade with the journey row.
+    await client.query("DELETE FROM seller_journeys WHERE id = $1", [journey.id]);
+    await seedJourney(client, journey);
+    await client.query("COMMIT");
+
+    return { journey, persistence: "database" };
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
   } finally {
     client.release();
   }

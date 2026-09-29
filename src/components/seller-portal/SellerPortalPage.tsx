@@ -5,9 +5,12 @@ import Link from "next/link";
 import { type FormEvent, type ReactNode, useEffect, useState } from "react";
 import styles from "./SellerPortalPage.module.scss";
 import {
+  actorLabels,
   cloneSampleJourney,
   getAvailableTransitions,
+  getForwardTransition,
   getVendorUrl,
+  isForwardTransition,
   journeyStates,
   stateMeta,
   type JourneyPersistence,
@@ -146,6 +149,14 @@ function Disclosure({
   );
 }
 
+function TaskOwner({ actor, owner }: { actor: JourneyActor; owner: JourneyActor }) {
+  return (
+    <p className={styles.taskOwner}>
+      {owner === actor ? <span className={styles.yourTask}>Your task</span> : actorLabels[owner]}
+    </p>
+  );
+}
+
 interface ChatMessage {
   id: string;
   from: "assistant" | "user";
@@ -255,7 +266,12 @@ export default function SellerPortalPage() {
   const [isDemo, setIsDemo] = useState(true);
 
   const actions = getAvailableTransitions(journey.currentState, actor);
+  const forwardActions = actions.filter((option) => isForwardTransition(journey.currentState, option));
+  const otherActions = actions.filter((option) => !isForwardTransition(journey.currentState, option));
+  // Who moves the sale on from here — shown to everyone else as "Waiting on…".
+  const nextMove = getForwardTransition(journey.currentState);
   const totalStages = journeyStates.length;
+  const currentIndex = journeyStates.indexOf(journey.currentState);
 
   const viewIndex = journeyStates.indexOf(viewState);
   const viewMeta = stageContent[viewState];
@@ -268,10 +284,22 @@ export default function SellerPortalPage() {
   const doneByTask = new Map(
     journey.checklist.map((item) => [`${item.state ?? journey.currentState}:${item.title}`, item.done]),
   );
+  // Moving past a step completes it; only the current step reads done-state
+  // from the journey. This also holds when a task is renamed in the editor.
+  const isTaskDone = (state: JourneyState, title: string) => {
+    const stateIndex = journeyStates.indexOf(state);
+
+    if (stateIndex !== currentIndex) {
+      return stateIndex < currentIndex;
+    }
+
+    return doneByTask.get(`${state}:${title}`) ?? false;
+  };
   const viewChecklist = viewMeta.checklist.map((item) => ({
     ...item,
-    done: doneByTask.get(`${viewState}:${item.title}`) ?? false,
+    done: isTaskDone(viewState, item.title),
   }));
+  const viewDoneCount = viewChecklist.filter((item) => item.done).length;
   const totalTasks = journeyStates.reduce(
     (sum, state) => sum + stageContent[state].checklist.length,
     0,
@@ -330,9 +358,11 @@ export default function SellerPortalPage() {
           setSessionUser(payload.user);
           setIsDemo(payload.demo);
 
-          const requestedRole = roleSwitcherEnabled
-            ? new URLSearchParams(window.location.search).get("role")
-            : null;
+          // Demo mode always honours ?role= so each side of the demo opens correctly.
+          const requestedRole =
+            roleSwitcherEnabled || payload.demo
+              ? new URLSearchParams(window.location.search).get("role")
+              : null;
 
           // During development the URL/role switcher can override the signed-in
           // account perspective. Set NEXT_PUBLIC_ROLE_SWITCHER=false to restore
@@ -360,7 +390,7 @@ export default function SellerPortalPage() {
   const handleActorChange = (nextActor: JourneyActor) => {
     setActor(nextActor);
 
-    if (roleSwitcherEnabled) {
+    if (roleSwitcherEnabled || isDemo) {
       const url = new URL(window.location.href);
       url.searchParams.set("role", nextActor);
       window.history.replaceState({}, "", url.toString());
@@ -510,6 +540,15 @@ export default function SellerPortalPage() {
                 ))}
               </div>
             ) : null}
+
+            {isDemo ? (
+              <form action="/api/demo/start" method="post">
+                <input name="role" type="hidden" value={actor} />
+                <button className={styles.restartButton} type="submit">
+                  Restart demo as {actorLabels[actor]}
+                </button>
+              </form>
+            ) : null}
           </div>
         </header>
 
@@ -525,7 +564,7 @@ export default function SellerPortalPage() {
                   onClick={() => setViewState(journeyStates[viewIndex - 1])}
                   type="button"
                 >
-                  ‹ Previous step
+                  ‹ Previous<span className={styles.navWord}> step</span>
                 </button>
                 <div className={styles.statusStageLabel}>
                   Step {viewIndex + 1} of {totalStages}
@@ -536,7 +575,7 @@ export default function SellerPortalPage() {
                   onClick={() => setViewState(journeyStates[viewIndex + 1])}
                   type="button"
                 >
-                  Next step ›
+                  Next<span className={styles.navWord}> step</span> ›
                 </button>
               </div>
               <div className={styles.progressBar}>
@@ -553,25 +592,58 @@ export default function SellerPortalPage() {
 
               {isViewingCurrent ? (
                 <div className={styles.actions}>
-                  {actions.length > 0 ? (
-                    actions.map((action) => (
-                      <button
-                        key={`${actor}-${action.to}`}
-                        className={styles.actionButton}
-                        disabled={isSubmitting}
-                        onClick={() => handleAction(action.to)}
-                        type="button"
-                      >
-                        <strong>{action.label}</strong>
-                        <br />
-                        {action.detail}
-                      </button>
-                    ))
-                  ) : (
-                    <button className={styles.ghostButton} disabled type="button">
-                      No actions available for the {actor} role at this stage.
+                  {forwardActions.map((action) => (
+                    <button
+                      key={`${actor}-${action.to}`}
+                      className={styles.actionButton}
+                      disabled={isSubmitting}
+                      onClick={() => handleAction(action.to)}
+                      type="button"
+                    >
+                      <strong>{action.label}</strong>
+                      <br />
+                      {action.detail}
                     </button>
-                  )}
+                  ))}
+
+                  {forwardActions.length === 0 ? (
+                    <div className={styles.waitingCard}>
+                      {nextMove ? (
+                        <>
+                          <span>
+                            <strong>Waiting on the {actorLabels[nextMove.actor].toLowerCase()}</strong>
+                            {nextMove.detail}
+                          </span>
+                          {isDemo || roleSwitcherEnabled ? (
+                            <button
+                              className={styles.waitingSwitch}
+                              onClick={() => handleActorChange(nextMove.actor)}
+                              type="button"
+                            >
+                              Switch to {actorLabels[nextMove.actor]} ›
+                            </button>
+                          ) : null}
+                        </>
+                      ) : (
+                        <span>
+                          <strong>This sale is complete</strong>
+                          Every step from intake to settlement is recorded in the activity history below.
+                        </span>
+                      )}
+                    </div>
+                  ) : null}
+
+                  {otherActions.map((action) => (
+                    <button
+                      key={`${actor}-${action.to}`}
+                      className={styles.secondaryAction}
+                      disabled={isSubmitting}
+                      onClick={() => handleAction(action.to)}
+                      type="button"
+                    >
+                      <strong>{action.label}</strong> — {action.detail}
+                    </button>
+                  ))}
 
                   {journey.currentState === "ready_for_listing" ||
                   journey.currentState === "live_on_portals" ? (
@@ -617,7 +689,14 @@ export default function SellerPortalPage() {
             </section>
 
             <section className={styles.panel}>
-              <h2>Checklist for this step</h2>
+              <div className={styles.panelHeading}>
+                <h2>Checklist for this step</h2>
+                {viewChecklist.length > 0 ? (
+                  <span className={styles.panelMeta}>
+                    {viewDoneCount} of {viewChecklist.length} done
+                  </span>
+                ) : null}
+              </div>
               {viewChecklist.length > 0 ? (
                 <div className={styles.checklist}>
                   {viewChecklist.map((item) => (
@@ -625,7 +704,7 @@ export default function SellerPortalPage() {
                       <span className={`${styles.dot} ${item.done ? styles.dotDone : ""}`} />
                       <div>
                         <strong>{item.title}</strong>
-                        <p>{item.owner} owned task</p>
+                        <TaskOwner actor={actor} owner={item.owner} />
                       </div>
                     </div>
                   ))}
@@ -863,14 +942,14 @@ export default function SellerPortalPage() {
                         <h3 className={styles.subheading}>{stageContent[state].label}</h3>
                         <div className={styles.checklist}>
                           {items.map((item) => {
-                            const done = doneByTask.get(`${state}:${item.title}`) ?? false;
+                            const done = isTaskDone(state, item.title);
 
                             return (
                               <div key={`${state}-${item.title}`} className={styles.checklistItem}>
                                 <span className={`${styles.dot} ${done ? styles.dotDone : ""}`} />
                                 <div>
                                   <strong>{item.title}</strong>
-                                  <p>{item.owner} owned task</p>
+                                  <TaskOwner actor={actor} owner={item.owner} />
                                 </div>
                               </div>
                             );
@@ -884,9 +963,10 @@ export default function SellerPortalPage() {
             </section>
 
             <p className={styles.footerNote}>
-              Viewing as <strong>{actor}</strong> &middot; Data source: <strong>{persistence}</strong>{" "}
-              &middot; <Link href="/admin/seller-journey">Admin controls</Link> &middot;{" "}
-              <Link href="/admin/stage-content">Content editor</Link>
+              Viewing as <strong>{actorLabels[actor]}</strong> &middot; <Link href="/">Choose a side</Link>{" "}
+              &middot; <Link href="/admin/stage-content">Content editor</Link> &middot;{" "}
+              <Link href="/admin/seller-journey">Journey admin</Link>
+              {isDemo ? null : <> &middot; Data source: {persistence}</>}
             </p>
           </>
         )}

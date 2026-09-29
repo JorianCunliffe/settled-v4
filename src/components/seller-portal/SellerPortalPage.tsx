@@ -7,6 +7,7 @@ import styles from "./SellerPortalPage.module.scss";
 import {
   actorLabels,
   cloneSampleJourney,
+  getAppointedAgent,
   getAvailableTransitions,
   getForwardTransition,
   getVendorUrl,
@@ -47,6 +48,7 @@ async function requestTransition(
   journeyId: string,
   actor: JourneyActor,
   to: JourneyState,
+  agentId?: string,
 ): Promise<{ journey: SellerJourney; persistence: JourneyPersistence }> {
   const response = await fetch("/api/seller-journey", {
     method: "POST",
@@ -57,6 +59,7 @@ async function requestTransition(
       journeyId,
       actor,
       to,
+      agentId,
     }),
   });
 
@@ -264,12 +267,16 @@ export default function SellerPortalPage() {
   const [stageContent, setStageContent] = useState<Record<JourneyState, StageMeta>>(stateMeta);
   const [sessionUser, setSessionUser] = useState<SessionUser | null>(null);
   const [isDemo, setIsDemo] = useState(true);
+  const [confirmingAgentId, setConfirmingAgentId] = useState<string | null>(null);
 
   const actions = getAvailableTransitions(journey.currentState, actor);
   const forwardActions = actions.filter((option) => isForwardTransition(journey.currentState, option));
   const otherActions = actions.filter((option) => !isForwardTransition(journey.currentState, option));
   // Who moves the sale on from here — shown to everyone else as "Waiting on…".
   const nextMove = getForwardTransition(journey.currentState);
+  // Appointing is a choice between candidates, not a single button.
+  const isChoosingAgent = forwardActions.some((option) => option.to === "agent_appointed");
+  const appointedAgent = getAppointedAgent(journey);
   const totalStages = journeyStates.length;
   const currentIndex = journeyStates.indexOf(journey.currentState);
 
@@ -389,6 +396,7 @@ export default function SellerPortalPage() {
 
   const handleActorChange = (nextActor: JourneyActor) => {
     setActor(nextActor);
+    setConfirmingAgentId(null);
 
     if (roleSwitcherEnabled || isDemo) {
       const url = new URL(window.location.href);
@@ -397,14 +405,15 @@ export default function SellerPortalPage() {
     }
   };
 
-  const handleAction = async (to: JourneyState) => {
+  const handleAction = async (to: JourneyState, agentId?: string) => {
     setIsSubmitting(true);
     setError(null);
 
     try {
-      const payload = await requestTransition(journey.id, actor, to);
+      const payload = await requestTransition(journey.id, actor, to, agentId);
       setJourney(payload.journey);
       setPersistence(payload.persistence);
+      setConfirmingAgentId(null);
     } catch (nextError) {
       const message =
         nextError instanceof Error ? nextError.message : "Transition failed.";
@@ -499,7 +508,10 @@ export default function SellerPortalPage() {
           </div>
           <div className={styles.topBarProperty}>
             <strong>{journey.propertyAddress}</strong>
-            <span>{journey.targetPrice}</span>
+            <span>
+              {journey.targetPrice}
+              {appointedAgent ? <> &middot; Agent: {appointedAgent.name}</> : null}
+            </span>
           </div>
           <div className={styles.topBarActions}>
             {!isDemo ? (
@@ -588,23 +600,84 @@ export default function SellerPortalPage() {
                 />
               </div>
               <h1>{viewMeta.label}</h1>
-              <p className={styles.statusExplainer}>{viewMeta.whatHappensNow}</p>
+              <p className={styles.statusExplainer}>
+                {(showAgentNotes && viewMeta.agentWhatHappensNow) || viewMeta.whatHappensNow}
+              </p>
 
               {isViewingCurrent ? (
                 <div className={styles.actions}>
-                  {forwardActions.map((action) => (
-                    <button
-                      key={`${actor}-${action.to}`}
-                      className={styles.actionButton}
-                      disabled={isSubmitting}
-                      onClick={() => handleAction(action.to)}
-                      type="button"
-                    >
-                      <strong>{action.label}</strong>
-                      <br />
-                      {action.detail}
-                    </button>
-                  ))}
+                  {isChoosingAgent ? (
+                    <div className={styles.agentChooser}>
+                      <h2 className={styles.chooserHeading}>Choose your agent</h2>
+                      {journey.agentCandidates.map((candidate) => {
+                        const firstName = candidate.name.split(" ")[0];
+                        const isConfirming = confirmingAgentId === candidate.id;
+
+                        return (
+                          <div
+                            className={`${styles.candidateOption} ${isConfirming ? styles.candidateOptionConfirming : ""}`}
+                            key={candidate.id}
+                          >
+                            <div className={styles.candidateInfo}>
+                              <strong>{candidate.name}</strong>
+                              <span>
+                                {candidate.suburb} &middot; {candidate.specialty}
+                              </span>
+                            </div>
+                            <span className={styles.rating}>{candidate.rating.toFixed(1)}</span>
+                            {isConfirming ? (
+                              <div className={styles.confirmRow}>
+                                <span>
+                                  Appoint <strong>{candidate.name}</strong> to represent{" "}
+                                  {journey.propertyAddress}?
+                                </span>
+                                <span className={styles.confirmButtons}>
+                                  <button
+                                    className={styles.cancelButton}
+                                    disabled={isSubmitting}
+                                    onClick={() => setConfirmingAgentId(null)}
+                                    type="button"
+                                  >
+                                    Cancel
+                                  </button>
+                                  <button
+                                    className={styles.appointButton}
+                                    disabled={isSubmitting}
+                                    onClick={() => handleAction("agent_appointed", candidate.id)}
+                                    type="button"
+                                  >
+                                    {isSubmitting ? "Appointing…" : `Confirm ${firstName}`}
+                                  </button>
+                                </span>
+                              </div>
+                            ) : (
+                              <button
+                                className={styles.appointButton}
+                                onClick={() => setConfirmingAgentId(candidate.id)}
+                                type="button"
+                              >
+                                Appoint {firstName}
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    forwardActions.map((action) => (
+                      <button
+                        key={`${actor}-${action.to}`}
+                        className={styles.actionButton}
+                        disabled={isSubmitting}
+                        onClick={() => handleAction(action.to)}
+                        type="button"
+                      >
+                        <strong>{action.label}</strong>
+                        <br />
+                        {action.detail}
+                      </button>
+                    ))
+                  )}
 
                   {forwardActions.length === 0 ? (
                     <div className={styles.waitingCard}>
@@ -780,7 +853,7 @@ export default function SellerPortalPage() {
               ) : null}
 
               <p className={styles.tipCallout}>
-                <strong>Tip:</strong> {viewMeta.helpTip}
+                <strong>Tip:</strong> {(showAgentNotes && viewMeta.agentHelpTip) || viewMeta.helpTip}
               </p>
             </section>
 
@@ -909,7 +982,14 @@ export default function SellerPortalPage() {
               </Disclosure>
 
               {journey.agentCandidates.length > 0 ? (
-                <Disclosure title="Recommended agents" subtitle={`${journey.agentCandidates.length} candidates`}>
+                <Disclosure
+                  title={appointedAgent ? "Agent shortlist" : "Recommended agents"}
+                  subtitle={
+                    appointedAgent
+                      ? `${appointedAgent.name} appointed`
+                      : `${journey.agentCandidates.length} candidates`
+                  }
+                >
                   <div className={styles.candidates}>
                     {journey.agentCandidates.map((candidate) => (
                       <div key={candidate.id} className={styles.candidate}>
@@ -920,7 +1000,11 @@ export default function SellerPortalPage() {
                               {candidate.suburb} &middot; {candidate.specialty}
                             </p>
                           </div>
-                          <span className={styles.rating}>{candidate.rating.toFixed(1)}</span>
+                          {candidate.id === appointedAgent?.id ? (
+                            <span className={styles.badge}>Appointed</span>
+                          ) : (
+                            <span className={styles.rating}>{candidate.rating.toFixed(1)}</span>
+                          )}
                         </div>
                       </div>
                     ))}

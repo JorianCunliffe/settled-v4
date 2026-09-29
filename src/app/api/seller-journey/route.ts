@@ -31,6 +31,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const body = (await request.json()) as {
     actor?: JourneyActor;
+    agentId?: string;
     journeyId?: string;
     note?: string;
     to?: JourneyState;
@@ -44,10 +45,12 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    // Without a note the history records who moved the sale, or who was appointed.
     const { journey, persistence } = await transitionStoredJourney({
       actor: body.actor,
+      agentId: body.agentId,
       journeyId: body.journeyId,
-      note: body.note ?? `Transition accepted by ${body.actor}.`,
+      note: body.note,
       to: body.to,
     });
 

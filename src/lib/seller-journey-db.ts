@@ -20,6 +20,7 @@ type JourneyRow = {
   current_state: JourneyState;
   checklist: SellerJourney["checklist"];
   agent_candidates: SellerJourney["agentCandidates"];
+  appointed_agent_id: string | null;
 };
 
 type EventRow = {
@@ -138,6 +139,11 @@ async function ensureSchema(client: PoolClient) {
     )
   `);
 
+  // Added after launch; nullable so existing rows need no backfill.
+  await client.query(
+    "ALTER TABLE seller_journeys ADD COLUMN IF NOT EXISTS appointed_agent_id TEXT NULL",
+  );
+
   await client.query(`
     CREATE TABLE IF NOT EXISTS seller_journey_events (
       id TEXT PRIMARY KEY,
@@ -179,6 +185,7 @@ function hydrateJourney(
     currentState: row.current_state,
     checklist: row.checklist,
     agentCandidates: row.agent_candidates,
+    appointedAgentId: row.appointed_agent_id ?? null,
     timeline: events.map((event) => ({
       actor: event.actor,
       from: event.from_state,
@@ -214,9 +221,10 @@ async function seedJourney(client: PoolClient, seeded: SellerJourney = cloneSamp
         target_price,
         current_state,
         checklist,
-        agent_candidates
+        agent_candidates,
+        appointed_agent_id
       )
-      VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb)
+      VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8)
       ON CONFLICT (id) DO NOTHING
     `,
     [
@@ -227,6 +235,7 @@ async function seedJourney(client: PoolClient, seeded: SellerJourney = cloneSamp
       seeded.currentState,
       JSON.stringify(seeded.checklist),
       JSON.stringify(seeded.agentCandidates),
+      seeded.appointedAgentId,
     ],
   );
 
@@ -279,7 +288,8 @@ async function fetchJourneyById(
         target_price,
         current_state,
         checklist,
-        agent_candidates
+        agent_candidates,
+        appointed_agent_id
       FROM seller_journeys
       WHERE id = $1
     `,
@@ -416,6 +426,7 @@ export async function transitionStoredJourney(params: {
   journeyId?: string;
   note?: string;
   to: JourneyState;
+  agentId?: string;
 }): Promise<{
   journey: SellerJourney;
   persistence: JourneyPersistence;
@@ -428,6 +439,7 @@ export async function transitionStoredJourney(params: {
       actor: params.actor,
       to: params.to,
       note: params.note,
+      agentId: params.agentId,
     });
 
     saveMemoryJourney(journey);
@@ -458,6 +470,7 @@ export async function transitionStoredJourney(params: {
       actor: params.actor,
       to: params.to,
       note: params.note,
+      agentId: params.agentId,
     });
 
     await client.query(
@@ -470,6 +483,7 @@ export async function transitionStoredJourney(params: {
           current_state = $5,
           checklist = $6::jsonb,
           agent_candidates = $7::jsonb,
+          appointed_agent_id = $8,
           updated_at = NOW()
         WHERE id = $1
       `,
@@ -481,6 +495,7 @@ export async function transitionStoredJourney(params: {
         nextJourney.currentState,
         JSON.stringify(nextJourney.checklist),
         JSON.stringify(nextJourney.agentCandidates),
+        nextJourney.appointedAgentId,
       ],
     );
 

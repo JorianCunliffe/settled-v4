@@ -182,6 +182,12 @@ export function validateStageContent(input: unknown): StageMeta | string {
     }
   }
 
+  for (const field of ["agentWhatHappensNow", "agentHelpTip"] as const) {
+    if (!isOptionalString(raw[field])) {
+      return `"${field}" must be a string when provided.`;
+    }
+  }
+
   if (!Array.isArray(raw.documentsNeeded) || !raw.documentsNeeded.every(isNonEmptyString)) {
     return '"documentsNeeded" must be an array of non-empty strings.';
   }
@@ -298,6 +304,11 @@ export function validateStageContent(input: unknown): StageMeta | string {
     accent: raw.accent as string,
     whatHappensNow: raw.whatHappensNow as string,
     helpTip: raw.helpTip as string,
+    // Blank agent copy is dropped so the agent view falls back to the seller text.
+    ...(isNonEmptyString(raw.agentWhatHappensNow)
+      ? { agentWhatHappensNow: raw.agentWhatHappensNow.trim() }
+      : {}),
+    ...(isNonEmptyString(raw.agentHelpTip) ? { agentHelpTip: raw.agentHelpTip.trim() } : {}),
     documentsNeeded: raw.documentsNeeded as string[],
     checklist,
     helpVideo,

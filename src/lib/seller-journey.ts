@@ -60,6 +60,8 @@ export interface SellerJourney {
   timeline: TimelineEntry[];
   checklist: ChecklistItem[];
   agentCandidates: AgentCandidate[];
+  /** The candidate the seller appointed at Agent Matching, once chosen. */
+  appointedAgentId: string | null;
   documents: JourneyDocument[];
 }
 
@@ -132,6 +134,10 @@ export interface StageMeta {
   documentsNeeded: string[];
   /** A short, reassuring tip or answer to a common question at this stage. */
   helpTip: string;
+  /** "What happens now" for the agent and concierge. Falls back to whatHappensNow. */
+  agentWhatHappensNow?: string;
+  /** The tip for the agent and concierge. Falls back to helpTip. */
+  agentHelpTip?: string;
   /** The tasks to complete at this step. Done-state is tracked per journey. */
   checklist: ChecklistTemplateItem[];
   /** The help video for this step. Every step has one. */
@@ -155,6 +161,10 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
     ],
     helpTip:
       "Not sure about pricing yet? A rough range is fine — your agent will help refine it during preparation.",
+    agentWhatHappensNow:
+      "The seller is sharing their property details, goals and timing. Once intake is complete, Settled shortlists local agents matched on suburb results, property type and style.",
+    agentHelpTip:
+      "Nothing is needed from agents yet. A complete intake makes for a sharper shortlist and a better first conversation.",
     checklist: [
       { title: "Confirm property address and ownership details", owner: "seller" },
       { title: "Share sale timeframe and target price range", owner: "seller" },
@@ -210,6 +220,10 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
     documentsNeeded: [],
     helpTip:
       "Look for agents with strong recent sales in your suburb and a communication style that suits you.",
+    agentWhatHappensNow:
+      "The seller is comparing their shortlisted agents on local results, fees and communication, and will appoint one to represent the sale.",
+    agentHelpTip:
+      "Sellers compare agents side by side: bring a comparative market analysis and be upfront about commission and marketing costs.",
     checklist: [
       { title: "Review the recommended agents", owner: "seller" },
       { title: "Compare shortlist performance by suburb and property type", owner: "coordinator" },
@@ -253,6 +267,10 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
     documentsNeeded: ["Signed agency agreement", "Photo ID for contract verification"],
     helpTip:
       "Your agent will walk you through the agreement — ask about commission, marketing spend, and campaign length before signing.",
+    agentWhatHappensNow:
+      "The agent is appointed. Next: sign the agency agreement, verify the seller's ID, and agree the marketing plan and budget before preparation starts.",
+    agentHelpTip:
+      "Walk the seller through commission, marketing spend and campaign length before they sign, and give them a copy of every signed document.",
     checklist: [
       { title: "Sign the agency agreement", owner: "seller" },
       { title: "Upload photo ID for contract verification", owner: "seller" },
@@ -312,6 +330,10 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
     ],
     helpTip:
       "This is the stage where small presentation improvements tend to have the biggest impact on buyer interest.",
+    agentWhatHappensNow:
+      "Preparation is under way: styling, repairs, photography and the contract of sale. Trades usually have the longest lead time, so book them first.",
+    agentHelpTip:
+      "Keep the comparable sales behind the price guide on file — it needs to stand up if a buyer or regulator asks.",
     checklist: [
       { title: "Book styling and pre-listing maintenance", owner: "agent" },
       { title: "Schedule photography and media", owner: "agent" },
@@ -379,6 +401,10 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
     documentsNeeded: [],
     helpTip:
       "Once live, your listing syncs automatically across connected portals — no manual re-entry needed.",
+    agentWhatHappensNow:
+      "Everything is approved. Confirm inspection times, then the concierge publishes the listing to the portals.",
+    agentHelpTip:
+      "Check the disclosure documents are attached before launch — they're much harder to fix once buyers are enquiring.",
     checklist: [
       { title: "Give final sign-off on copy, photos, and price guide", owner: "seller" },
       { title: "Confirm inspection times", owner: "agent" },
@@ -429,6 +455,10 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
     documentsNeeded: [],
     helpTip:
       "Ask your agent for a weekly campaign report so you can track enquiry volume and buyer sentiment.",
+    agentWhatHappensNow:
+      "The listing is live. Run inspections, follow up every enquiry, and send the seller a weekly campaign report.",
+    agentHelpTip:
+      "Record every offer and pass each one to the seller in writing, promptly — including ones you expect them to reject.",
     checklist: [
       { title: "Share weekly campaign report with the seller", owner: "agent" },
       { title: "Collect buyer feedback after each inspection", owner: "agent" },
@@ -479,6 +509,10 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
       "A buyer has made an offer and negotiations are underway. The campaign is moving toward closing.",
     documentsNeeded: ["Signed contract of sale (once accepted)", "Solicitor or conveyancer details"],
     helpTip: "If the offer falls through, the campaign can return to market at any time — nothing is lost.",
+    agentWhatHappensNow:
+      "A buyer has made an offer. Confirm their finance and conditions, and keep both sides' solicitors moving toward an unconditional contract.",
+    agentHelpTip:
+      "Diary every condition date — finance, building and pest — and chase each one a few days before it falls due.",
     checklist: [
       { title: "Review and respond to offer terms", owner: "seller" },
       { title: "Confirm buyer finance and conditions", owner: "agent" },
@@ -530,6 +564,10 @@ export const stateMeta: Record<JourneyState, StageMeta> = {
       "Congratulations — the sale is complete and settlement has occurred. Your seller journey is now archived.",
     documentsNeeded: [],
     helpTip: "You can revisit your full activity history any time from this page.",
+    agentWhatHappensNow:
+      "Settlement is complete. Hand over the keys, confirm the seller has received their funds, and close out the file.",
+    agentHelpTip:
+      "Ask the seller for a review while the experience is fresh, and keep the file for as long as your state requires.",
     checklist: [
       { title: "Confirm receipt of settlement funds", owner: "seller" },
       { title: "Hand over keys and property access", owner: "seller" },
@@ -725,6 +763,7 @@ export const sampleJourney: SellerJourney = {
       rating: 4.7,
     },
   ],
+  appointedAgentId: null,
   documents: [],
 };
 
@@ -779,16 +818,19 @@ export function buildDemoJourney(startState: JourneyState): SellerJourney {
       break;
     }
 
-    const appointed = journey.agentCandidates[0];
+    // The demo appoints the top-rated candidate on the seller's behalf.
+    const appointed = next.to === "agent_appointed" ? journey.agentCandidates[0] : undefined;
+
+    if (appointed) {
+      journey.appointedAgentId = appointed.id;
+    }
+
     timeline.push({
       at: "",
       actor: next.actor,
       from: state,
       to: next.to,
-      note:
-        next.to === "agent_appointed" && appointed
-          ? `${journey.sellerName} appointed ${appointed.name} to represent the property.`
-          : next.detail,
+      note: appointed ? appointmentNote(journey, appointed) : next.detail,
     });
     state = next.to;
   }
@@ -800,6 +842,14 @@ export function buildDemoJourney(startState: JourneyState): SellerJourney {
   });
 
   return { ...journey, currentState: state, timeline };
+}
+
+function appointmentNote(journey: SellerJourney, agent: AgentCandidate): string {
+  return `${journey.sellerName} appointed ${agent.name} to represent the property.`;
+}
+
+export function getAppointedAgent(journey: SellerJourney): AgentCandidate | null {
+  return journey.agentCandidates.find((candidate) => candidate.id === journey.appointedAgentId) ?? null;
 }
 
 export function canTransition(
@@ -815,6 +865,8 @@ export function transitionJourney(params: {
   to: JourneyState;
   actor: JourneyActor;
   note?: string;
+  /** Required when appointing: which shortlisted candidate the seller chose. */
+  agentId?: string;
 }): SellerJourney {
   const { journey, to, actor, note } = params;
 
@@ -824,9 +876,24 @@ export function transitionJourney(params: {
     );
   }
 
+  let appointedAgentId = journey.appointedAgentId;
+  let defaultNote = `${actorLabels[actor]} moved the sale to ${stateMeta[to].label}.`;
+
+  if (to === "agent_appointed") {
+    const agent = journey.agentCandidates.find((candidate) => candidate.id === params.agentId);
+
+    if (!agent) {
+      throw new Error("Choose which agent to appoint.");
+    }
+
+    appointedAgentId = agent.id;
+    defaultNote = appointmentNote(journey, agent);
+  }
+
   return {
     ...journey,
     currentState: to,
+    appointedAgentId,
     timeline: [
       ...journey.timeline,
       {
@@ -834,7 +901,7 @@ export function transitionJourney(params: {
         actor,
         from: journey.currentState,
         to,
-        note: note ?? `${actor} advanced the property to ${stateMeta[to].label}.`,
+        note: note ?? defaultNote,
       },
     ],
   };

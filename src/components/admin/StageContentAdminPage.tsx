@@ -26,6 +26,8 @@ interface Draft {
   summary: string;
   whatHappensNow: string;
   helpTip: string;
+  agentWhatHappensNow: string;
+  agentHelpTip: string;
   documentsNeeded: string;
   checklist: string;
   videoTitle: string;
@@ -49,6 +51,8 @@ function buildDraft(meta: StageMeta): Draft {
     summary: meta.summary,
     whatHappensNow: meta.whatHappensNow,
     helpTip: meta.helpTip,
+    agentWhatHappensNow: meta.agentWhatHappensNow ?? "",
+    agentHelpTip: meta.agentHelpTip ?? "",
     documentsNeeded: meta.documentsNeeded.join("\n"),
     checklist: meta.checklist.map((item) => `${item.title} | ${item.owner}`).join("\n"),
     videoTitle: meta.helpVideo.title,
@@ -104,6 +108,8 @@ function parseDraft(draft: Draft): StageMeta {
     summary: draft.summary.trim(),
     whatHappensNow: draft.whatHappensNow.trim(),
     helpTip: draft.helpTip.trim(),
+    ...(draft.agentWhatHappensNow.trim() ? { agentWhatHappensNow: draft.agentWhatHappensNow.trim() } : {}),
+    ...(draft.agentHelpTip.trim() ? { agentHelpTip: draft.agentHelpTip.trim() } : {}),
     documentsNeeded: draft.documentsNeeded
       .split("\n")
       .map((line) => line.trim())
@@ -324,7 +330,7 @@ export default function StageContentAdminPage() {
                 <textarea rows={2} value={draft.summary} onChange={(e) => setField("summary")(e.target.value)} />
               </label>
               <label className={styles.field}>
-                <span>What happens now (main explainer)</span>
+                <span>What happens now — seller view (main explainer)</span>
                 <textarea
                   rows={3}
                   value={draft.whatHappensNow}
@@ -332,8 +338,24 @@ export default function StageContentAdminPage() {
                 />
               </label>
               <label className={styles.field}>
-                <span>Tip</span>
+                <span>What happens now — agent &amp; concierge view (optional; uses the seller text if blank)</span>
+                <textarea
+                  rows={3}
+                  value={draft.agentWhatHappensNow}
+                  onChange={(e) => setField("agentWhatHappensNow")(e.target.value)}
+                />
+              </label>
+              <label className={styles.field}>
+                <span>Tip — seller view</span>
                 <textarea rows={2} value={draft.helpTip} onChange={(e) => setField("helpTip")(e.target.value)} />
+              </label>
+              <label className={styles.field}>
+                <span>Tip — agent &amp; concierge view (optional; uses the seller tip if blank)</span>
+                <textarea
+                  rows={2}
+                  value={draft.agentHelpTip}
+                  onChange={(e) => setField("agentHelpTip")(e.target.value)}
+                />
               </label>
             </section>
 

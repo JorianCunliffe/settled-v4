@@ -1,156 +1,832 @@
-.page {
-  background:
-    radial-gradient(circle at top left, rgba(219, 179, 94, 0.16), transparent 32%),
-    radial-gradient(circle at top right, rgba(20, 74, 68, 0.18), transparent 28%),
-    linear-gradient(180deg, #f6f1e7 0%, #fffaf4 50%, #eef2eb 100%);
-  color: #16211d;
-  min-height: 100vh;
-}
+// Bento home page. Explicit sizes, weights and margins throughout: the
+// template's globals style bare headings, paragraphs, lists and buttons.
 
-.container {
-  display: grid;
-  gap: 36px;
-  margin: 0 auto;
-  max-width: 920px;
-  padding: 28px 20px 64px;
-}
+$ground: #eef1ef;
+$ink: #101413;
+$muted: #56625e;
+$tile: #ffffff;
+$line: #e1e7e4;
+$chip: #f3f6f4;
+$accent: #1f5c4f;
+$dark: #0f2a26;
+$dark-card: #163a34;
+$dark-line: #2b5149;
+$dark-muted: #a9c2ba;
+$gold: #e8b84a;
+$tint: #dcebe4;
+$ink-muted: #a9b5b1;
+$radius: 28px;
+$sans: Geist, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+$mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 
-.topBar {
-  align-items: center;
-  display: flex;
-  justify-content: space-between;
-}
-
-.signInLink {
-  border: 1px solid rgba(21, 58, 53, 0.2);
-  border-radius: 999px;
-  color: #153a35;
-  font-size: 0.9rem;
-  font-weight: 700;
-  padding: 9px 18px;
-  text-decoration: none;
-}
-
-.signInLink:hover {
-  background: rgba(21, 58, 53, 0.06);
-}
-
-.hero {
-  display: grid;
-  gap: 14px;
-  max-width: 640px;
-}
-
-.eyebrow,
-.sideEyebrow {
-  color: #8b5a20;
-  font-size: 0.8rem;
-  font-weight: 700;
+@mixin label($color: $muted) {
+  color: $color;
+  font-family: $mono;
+  font-size: 12px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
-.hero h1 {
-  font-family: "EB Garamond", Georgia, serif;
-  font-size: clamp(2.4rem, 5vw, 3.6rem);
+@mixin focus-ring($color: $ink) {
+  &:focus-visible {
+    outline: 2px solid $color;
+    outline-offset: 3px;
+  }
+}
+
+@mixin pill {
+  align-items: center;
+  border-radius: 999px;
+  cursor: pointer;
+  display: inline-flex;
+  font-family: $sans;
+  font-size: 16px;
   font-weight: 600;
-  line-height: 1.02;
-  margin: 0;
+  justify-content: center;
+  line-height: 1.2;
+  padding: 15px 24px;
+  text-decoration: none;
+  transition: transform 150ms ease;
+
+  &:hover {
+    transform: translateY(-1px);
+  }
+}
+
+.page {
+  background: $ground;
+  color: $ink;
+  font-family: $sans;
+  font-size: 16px;
+  min-height: 100vh;
+
+  h1,
+  h2,
+  p,
+  ol,
+  ul {
+    font-family: inherit;
+    margin: 0;
+  }
+}
+
+.container {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 0 auto;
+  max-width: 1240px;
+  padding: 20px 32px 72px;
+}
+
+// ---------- header ----------
+.header {
+  align-items: center;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  padding: 8px 0;
+}
+
+.logoLink {
+  display: block;
+  @include focus-ring;
+
+  img {
+    display: block;
+    height: auto;
+  }
+}
+
+.nav {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+}
+
+.navLink {
+  color: $muted;
+  font-size: 15px;
+  font-weight: 500;
+  padding: 11px 14px;
+  text-decoration: none;
+  @include focus-ring;
+
+  &:hover {
+    color: $ink;
+  }
+}
+
+.signIn {
+  @include pill;
+  background: $ink;
+  color: #fff;
+  font-size: 15px;
+  padding: 12px 20px;
+  @include focus-ring;
+
+  &:hover {
+    color: #fff;
+  }
+}
+
+// ---------- hero ----------
+.hero {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  padding: 64px 0 48px;
+}
+
+.eyebrow {
+  align-items: center;
+  background: $tile;
+  border: 1px solid #d5dcd9;
+  border-radius: 999px;
+  color: #3e4946;
+  display: inline-flex;
+  font-size: 14px;
+  font-weight: 500;
+  gap: 8px;
+  padding: 7px 14px;
+}
+
+.eyebrowDot {
+  background: $accent;
+  border-radius: 999px;
+  height: 8px;
+  width: 8px;
+}
+
+.page .headline {
+  color: $ink;
+  font-size: clamp(44px, 6vw, 80px);
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  line-height: 1;
+  max-width: 980px;
   text-wrap: balance;
 }
 
-.hero p {
-  color: #3a4640;
-  font-size: 1.08rem;
-  line-height: 1.6;
-  margin: 0;
+.page .lede {
+  color: $muted;
+  font-size: 20px;
+  line-height: 1.5;
+  max-width: 620px;
 }
 
-.sides {
+.ctas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-top: 8px;
+}
+
+.ctaForm {
+  display: contents;
+}
+
+// Buttons and links share these; `button:focus { outline: none }` from the
+// template is outranked by the class-level focus ring.
+.ctaPrimary {
+  @include pill;
+  background: $accent;
+  border: 1px solid $accent;
+  color: #fff;
+  @include focus-ring;
+
+  &:hover {
+    color: #fff;
+  }
+}
+
+.ctaSecondary {
+  @include pill;
+  background: $tile;
+  border: 1px solid #cbd3d0;
+  color: $ink;
+  @include focus-ring;
+
+  &:hover {
+    color: $ink;
+  }
+}
+
+.page .demoNote {
+  color: $muted;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+// ---------- bento ----------
+.bento {
   display: grid;
   gap: 16px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: minmax(264px, auto);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
-.side {
-  background: rgba(255, 255, 255, 0.85);
-  border: 1px solid rgba(22, 33, 29, 0.08);
-  border-radius: 24px;
-  box-shadow: 0 16px 50px rgba(36, 39, 33, 0.08);
+.tWho { grid-column: 1 / 3; grid-row: 1 / 3; }
+.tSteps { grid-column: 3 / 5; grid-row: 1; }
+.tVideo { grid-column: 3; grid-row: 2; }
+.tGuide { grid-column: 4; grid-row: 2; }
+.tChooser { grid-column: 1 / 3; grid-row: 3; }
+.tServices { grid-column: 3; grid-row: 3 / 5; }
+.tPricing { grid-column: 4; grid-row: 3; }
+.tSeats { grid-column: 1 / 3; grid-row: 4; }
+.tSignIn { grid-column: 4; grid-row: 4; }
+
+.tile {
+  background: $tile;
+  border-radius: $radius;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+  padding: 28px 32px;
+}
+
+.tileCompact {
+  gap: 14px;
+  padding: 20px;
+}
+
+.tileDark {
+  background: $dark;
+  color: #fff;
+  gap: 14px;
+  overflow: hidden;
+  padding: 32px;
+}
+
+.tileTint {
+  background: $tint;
+  padding: 28px;
+}
+
+.tileInk {
+  background: $ink;
+  color: #fff;
+  padding: 28px;
+}
+
+.tileIntro {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label { @include label; }
+.labelOnDark { @include label($dark-muted); }
+.labelOnTint { @include label(#3e5a51); }
+.labelOnInk { @include label($ink-muted); }
+
+.page .tileHeading,
+.page .tileHeadingLarge,
+.page .tileHeadingMedium,
+.page .tileHeadingSmall,
+.page .tileHeadingInk {
+  color: inherit;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.15;
+}
+
+.page .tileHeading { color: $ink; font-size: 26px; }
+.page .tileHeadingLarge { font-size: 34px; letter-spacing: -0.02em; line-height: 1.08; max-width: 440px; }
+.page .tileHeadingMedium { color: $ink; font-size: 24px; }
+.page .tileHeadingSmall { color: $ink; font-size: 17px; letter-spacing: -0.01em; }
+.page .tileHeadingInk { color: #fff; font-size: 24px; }
+
+.page .bodyOnDark {
+  color: $dark-muted;
+  font-size: 16px;
+  line-height: 1.55;
+  max-width: 460px;
+}
+
+.page .small {
+  color: $muted;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+// "Who's up" preview
+.whoPreview {
+  background: $dark-card;
+  border: 1px solid $dark-line;
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: auto;
+  padding: 22px;
+}
+
+.whoTop {
+  align-items: baseline;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+
+  strong {
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+}
+
+.monoGold {
+  color: $gold;
+  font-family: $mono;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.segments {
+  display: grid;
+  gap: 4px;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+}
+
+.segmentOn,
+.segmentOff {
+  border-radius: 3px;
+  height: 6px;
+}
+
+.segmentOn { background: $gold; }
+.segmentOff { background: $dark-line; }
+
+.waiting {
+  align-items: center;
+  border: 1px dashed #4a7067;
+  border-radius: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 14px 16px;
+}
+
+.waitingText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  strong {
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  span {
+    color: $dark-muted;
+    font-size: 14px;
+  }
+}
+
+.fakeButtonLight,
+.fakeButton {
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 9px 15px;
+  white-space: nowrap;
+}
+
+.fakeButtonLight {
+  background: #fff;
+  color: $dark;
+}
+
+.fakeButton {
+  background: $accent;
+  color: #fff;
+}
+
+// Steps
+.steps {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  list-style: none;
+  padding: 0;
+}
+
+.step,
+.stepFinal {
+  background: $chip;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+}
+
+.stepFinal {
+  background: $accent;
+  color: #fff;
+
+  .stepNumber {
+    color: #fff;
+  }
+}
+
+.stepNumber {
+  color: $muted;
+  font-family: $mono;
+  font-size: 11px;
+}
+
+.stepName {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+// Video and guide
+.videoPreview,
+.guidePreview {
+  align-items: center;
+  aspect-ratio: 16 / 10;
+  border-radius: 14px;
+  display: flex;
+  justify-content: center;
+  position: relative;
+}
+
+.videoPreview { background: $ink; }
+.guidePreview { background: $chip; }
+
+.playCircle {
+  align-items: center;
+  background: #fff;
+  border-radius: 999px;
+  display: flex;
+  height: 52px;
+  justify-content: center;
+  width: 52px;
+
+  svg { fill: $ink; }
+}
+
+.duration {
+  background: #3a3f3d;
+  border-radius: 999px;
+  bottom: 10px;
+  color: #fff;
+  font-family: $mono;
+  font-size: 11px;
+  left: 12px;
+  padding: 4px 8px;
+  position: absolute;
+}
+
+.guidePage {
+  background: #fff;
+  border: 1px solid #d5dcd9;
+  border-radius: 6px;
+  box-shadow: 0 8px 20px rgba(16, 20, 19, 0.08);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  height: 108px;
+  justify-content: flex-end;
+  padding: 10px;
+  width: 84px;
+}
+
+.guideTag {
+  color: $accent;
+  font-family: $mono;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.mediaText {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+// Agent chooser
+.candidates {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.candidate {
+  align-items: center;
+  border: 1px solid $line;
+  border-radius: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px 14px;
+}
+
+.candidateInfo {
+  display: flex;
+  flex: 1 1 220px;
+  flex-direction: column;
+  gap: 2px;
+
+  strong {
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  span {
+    color: $muted;
+    font-size: 13px;
+  }
+}
+
+.rating {
+  color: #8a5a12;
+  font-family: $mono;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+// Services
+.services {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  list-style: none;
+  padding: 0;
+}
+
+.service {
+  align-items: center;
+  background: #fff;
+  border-radius: 14px;
+  display: flex;
+  gap: 12px;
+  padding: 12px 14px;
+}
+
+.serviceIcon {
+  fill: none;
+  flex-shrink: 0;
+  stroke: $accent;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.serviceName {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.serviceStep {
+  color: $muted;
+  font-family: $mono;
+  font-size: 11px;
+}
+
+// Pricing
+.tPricing {
   gap: 10px;
   padding: 28px;
 }
 
-.side h2 {
-  font-family: "EB Garamond", Georgia, serif;
-  font-size: 1.7rem;
+.price {
+  color: $accent;
+  font-size: 64px;
   font-weight: 600;
-  line-height: 1.1;
-  margin: 0;
+  letter-spacing: -0.04em;
+  line-height: 1;
 }
 
-.side p {
-  color: #516059;
-  line-height: 1.55;
-  margin: 0;
+.page .priceText {
+  font-size: 15px;
+  line-height: 1.45;
 }
 
-.opensAt {
-  color: #55635d;
-  font-size: 0.85rem;
+.page .priceOther {
+  border-top: 1px solid $line;
+  color: $muted;
+  font-size: 15px;
+  line-height: 1.45;
   margin-top: auto;
-  padding-top: 6px;
+  padding-top: 14px;
+
+  strong {
+    color: $ink;
+    font-weight: 600;
+  }
 }
 
-.side form {
-  display: contents;
+// Seats
+.seats {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.cta {
-  background: #153a35;
-  border: 0;
-  border-radius: 999px;
-  box-shadow: 0 14px 26px rgba(21, 58, 53, 0.2);
-  color: #fff;
-  cursor: pointer;
-  font: inherit;
-  font-weight: 700;
-  margin-top: 6px;
-  padding: 14px 20px;
-  text-align: center;
-  text-decoration: none;
-  transition:
-    transform 180ms ease,
-    box-shadow 180ms ease;
-}
+.seat {
+  border-top: 2px solid $ink;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 12px;
 
-.cta:hover {
-  box-shadow: 0 18px 32px rgba(21, 58, 53, 0.26);
-  color: #fff;
-  transform: translateY(-1px);
-}
-
-.footnote {
-  color: #6b746f;
-  font-size: 0.9rem;
-  margin: 0;
-  text-align: center;
-}
-
-@media (max-width: 720px) {
-  .sides {
-    grid-template-columns: 1fr;
+  strong {
+    font-size: 16px;
+    font-weight: 600;
   }
 
-  .side {
-    padding: 22px;
+  span {
+    color: $muted;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+}
+
+// Sign in
+.tSignIn {
+  gap: 14px;
+}
+
+.phonePreview {
+  background: #fff;
+  border-radius: 12px;
+  color: #6b7572;
+  font-size: 16px;
+  margin-top: auto;
+  padding: 12px 14px;
+}
+
+.signInTile {
+  color: $ink-muted;
+  font-size: 14px;
+  text-decoration: none;
+  @include focus-ring(#fff);
+
+  &:hover {
+    color: #fff;
+  }
+}
+
+// ---------- closing band ----------
+.closing {
+  align-items: flex-end;
+  background: $accent;
+  border-radius: $radius;
+  color: #fff;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 28px;
+  justify-content: space-between;
+  padding: 56px 40px;
+}
+
+.page .closingHeading {
+  color: #fff;
+  font-size: clamp(32px, 4vw, 52px);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  max-width: 620px;
+  text-wrap: balance;
+}
+
+.ctaOnAccent {
+  @include pill;
+  background: #fff;
+  border: 1px solid #fff;
+  color: $ink;
+  @include focus-ring(#fff);
+
+  &:hover {
+    color: $ink;
+  }
+}
+
+.ctaOutlineOnAccent {
+  @include pill;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  color: #fff;
+  @include focus-ring(#fff);
+
+  &:hover {
+    color: #fff;
+  }
+}
+
+// ---------- footer ----------
+.footer {
+  align-items: center;
+  color: $muted;
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 14px;
+  gap: 16px;
+  justify-content: space-between;
+  padding: 24px 4px 0;
+}
+
+.footerLink {
+  color: $muted;
+  text-decoration: none;
+  @include focus-ring;
+
+  &:hover {
+    color: $ink;
+  }
+}
+
+// ---------- responsive ----------
+@media (max-width: 980px) {
+  .bento {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tWho,
+  .tSteps,
+  .tChooser,
+  .tSeats {
+    grid-column: 1 / 3;
+    grid-row: auto;
+  }
+
+  .tVideo,
+  .tGuide,
+  .tServices,
+  .tPricing,
+  .tSignIn {
+    grid-column: auto;
+    grid-row: auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .container {
+    padding: 16px 16px 56px;
+  }
+
+  .navLink {
+    display: none;
+  }
+
+  .hero {
+    padding: 40px 0 32px;
+  }
+
+  .bento {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .tWho,
+  .tSteps,
+  .tVideo,
+  .tGuide,
+  .tChooser,
+  .tServices,
+  .tPricing,
+  .tSeats,
+  .tSignIn {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .tile,
+  .tileDark {
+    padding: 24px;
+  }
+
+  .steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .seats {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .closing {
+    padding: 40px 24px;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .cta {
+  .signIn,
+  .ctaPrimary,
+  .ctaSecondary,
+  .ctaOnAccent,
+  .ctaOutlineOnAccent {
     transition: none;
+
+    &:hover {
+      transform: none;
+    }
   }
 }

@@ -40,7 +40,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="#0D1A1C" />
         <link rel="icon" href="/assets/images/logo/settled-logo.png" sizes="any" />
         <link rel="apple-touch-icon" href="/assets/images/logo/settled-logo.png" />
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,500&display=swap" />
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,500&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" />
       </head>
       <body suppressHydrationWarning={true}>
         <div className="main-page-wrapper">

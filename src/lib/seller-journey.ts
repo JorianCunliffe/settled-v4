@@ -852,6 +852,21 @@ export function getAppointedAgent(journey: SellerJourney): AgentCandidate | null
   return journey.agentCandidates.find((candidate) => candidate.id === journey.appointedAgentId) ?? null;
 }
 
+export function isLocalToProperty(journey: SellerJourney, candidate: AgentCandidate): boolean {
+  return journey.propertyAddress.toLowerCase().includes(candidate.suburb.toLowerCase());
+}
+
+/** The shortlisted agent to suggest first: local to the property, then highest rated. */
+export function getRecommendedCandidate(journey: SellerJourney): AgentCandidate | null {
+  // Array sort is stable, so ties keep the shortlist's order.
+  const ranked = [...journey.agentCandidates].sort(
+    (a, b) =>
+      Number(isLocalToProperty(journey, b)) - Number(isLocalToProperty(journey, a)) ||
+      b.rating - a.rating,
+  );
+  return ranked[0] ?? null;
+}
+
 export function canTransition(
   from: JourneyState,
   to: JourneyState,

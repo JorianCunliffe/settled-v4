@@ -63,11 +63,25 @@
   padding: 32px;
 }
 
+// Three columns so the step label stays centred whatever the neighbouring names are.
 .statusNav {
   align-items: center;
-  display: flex;
+  display: grid;
   gap: 12px;
-  justify-content: space-between;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+}
+
+.statusNav > :first-child {
+  justify-self: start;
+}
+
+.statusNavNext {
+  justify-self: end;
+  text-align: right;
+}
+
+.navShort {
+  display: none;
 }
 
 .statusNavButton {
@@ -695,6 +709,48 @@
   gap: 12px;
 }
 
+// The one control to press next. Text label + ring, so it never relies on colour alone.
+.recommendedLabel {
+  align-items: center;
+  color: #8b5a20;
+  display: inline-flex;
+  font-size: 0.74rem;
+  font-weight: 700;
+  gap: 8px;
+  letter-spacing: 0.08em;
+  margin-bottom: -4px;
+  text-transform: uppercase;
+}
+
+.recommendedLabel::before {
+  background: #d9ad45;
+  border-radius: 999px;
+  content: "";
+  height: 8px;
+  width: 8px;
+}
+
+// Outline rather than box-shadow so it sits alongside each button's own shadow; the
+// extra class level beats the template's `button:focus { outline: none }`.
+.actions .recommended,
+.actions .recommended:focus {
+  outline: 3px solid #d9ad45;
+  outline-offset: 3px;
+}
+
+.candidateInfo .recommendedBadge {
+  justify-self: start;
+  background: rgba(219, 179, 94, 0.22);
+  border-radius: 999px;
+  color: #6b4a14;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin-top: 4px;
+  padding: 3px 9px;
+  text-transform: uppercase;
+}
+
 .actionButton,
 .ghostButton {
   padding: 14px 18px;
@@ -1026,8 +1082,12 @@
     grid-column: 1 / -1;
   }
 
-  .navWord {
+  .navLong {
     display: none;
+  }
+
+  .navShort {
+    display: inline;
   }
 
   .statusStageLabel {

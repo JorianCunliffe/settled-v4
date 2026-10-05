@@ -2,7 +2,7 @@
 
 import SettledLogo from "@/components/common/SettledLogo";
 import Link from "next/link";
-import { type FormEvent, type ReactNode, useEffect, useState } from "react";
+import { type FormEvent, type ReactNode, useEffect, useRef, useState } from "react";
 import styles from "./SellerPortalPage.module.scss";
 import {
   actorLabels,
@@ -10,6 +10,8 @@ import {
   getAppointedAgent,
   getAvailableTransitions,
   getForwardTransition,
+  getRecommendedCandidate,
+  isLocalToProperty,
   getVendorUrl,
   isForwardTransition,
   journeyStates,
@@ -268,6 +270,20 @@ export default function SellerPortalPage() {
   const [sessionUser, setSessionUser] = useState<SessionUser | null>(null);
   const [isDemo, setIsDemo] = useState(true);
   const [confirmingAgentId, setConfirmingAgentId] = useState<string | null>(null);
+  const confirmButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Opening a confirmation grows the card; on a phone that can push Confirm below the fold.
+  useEffect(() => {
+    if (!confirmingAgentId) {
+      return;
+    }
+
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    confirmButtonRef.current?.scrollIntoView({
+      behavior: reduceMotion ? "auto" : "smooth",
+      block: "nearest",
+    });
+  }, [confirmingAgentId]);
 
   const actions = getAvailableTransitions(journey.currentState, actor);
   const forwardActions = actions.filter((option) => isForwardTransition(journey.currentState, option));
@@ -277,6 +293,23 @@ export default function SellerPortalPage() {
   // Appointing is a choice between candidates, not a single button.
   const isChoosingAgent = forwardActions.some((option) => option.to === "agent_appointed");
   const appointedAgent = getAppointedAgent(journey);
+  const canSwitch = isDemo || roleSwitcherEnabled;
+  // Exactly one control per render is the recommended next step: the agent choice, the
+  // viewer's own forward move, or switching to whoever is up next.
+  const hasRecommendation = isChoosingAgent || forwardActions.length > 0 || Boolean(nextMove && canSwitch);
+  const recommendedCandidate = getRecommendedCandidate(journey);
+  const candidateOrder = recommendedCandidate
+    ? [recommendedCandidate, ...journey.agentCandidates.filter((c) => c.id !== recommendedCandidate.id)]
+    : journey.agentCandidates;
+  const topRating = Math.max(...journey.agentCandidates.map((candidate) => candidate.rating));
+  const recommendedReason = recommendedCandidate
+    ? [
+        isLocalToProperty(journey, recommendedCandidate) ? `local to ${recommendedCandidate.suburb}` : null,
+        recommendedCandidate.rating === topRating ? "top rated" : null,
+      ]
+        .filter(Boolean)
+        .join(", ")
+    : "";
   const totalStages = journeyStates.length;
   const currentIndex = journeyStates.indexOf(journey.currentState);
 
@@ -569,26 +602,38 @@ export default function SellerPortalPage() {
         ) : (
           <>
             <section className={styles.statusHero} style={{ borderTopColor: viewMeta.accent }}>
+              {/* Browsing, not progress: named after the neighbouring steps so it never
+                  reads as the way to move the sale on. */}
               <div className={styles.statusNav}>
-                <button
-                  className={styles.statusNavButton}
-                  disabled={!canViewPrevious}
-                  onClick={() => setViewState(journeyStates[viewIndex - 1])}
-                  type="button"
-                >
-                  ‹ Previous<span className={styles.navWord}> step</span>
-                </button>
+                {canViewPrevious ? (
+                  <button
+                    aria-label={`View previous step: ${stageContent[journeyStates[viewIndex - 1]].label}`}
+                    className={styles.statusNavButton}
+                    onClick={() => setViewState(journeyStates[viewIndex - 1])}
+                    type="button"
+                  >
+                    ‹ <span className={styles.navLong}>{stageContent[journeyStates[viewIndex - 1]].label}</span>
+                    <span className={styles.navShort}>Step {viewIndex}</span>
+                  </button>
+                ) : (
+                  <span />
+                )}
                 <div className={styles.statusStageLabel}>
                   Step {viewIndex + 1} of {totalStages}
                 </div>
-                <button
-                  className={styles.statusNavButton}
-                  disabled={!canViewNext}
-                  onClick={() => setViewState(journeyStates[viewIndex + 1])}
-                  type="button"
-                >
-                  Next<span className={styles.navWord}> step</span> ›
-                </button>
+                {canViewNext ? (
+                  <button
+                    aria-label={`View next step: ${stageContent[journeyStates[viewIndex + 1]].label}`}
+                    className={`${styles.statusNavButton} ${styles.statusNavNext}`}
+                    onClick={() => setViewState(journeyStates[viewIndex + 1])}
+                    type="button"
+                  >
+                    <span className={styles.navLong}>{stageContent[journeyStates[viewIndex + 1]].label}</span>
+                    <span className={styles.navShort}>Step {viewIndex + 2}</span> ›
+                  </button>
+                ) : (
+                  <span />
+                )}
               </div>
               <div className={styles.progressBar}>
                 <div
@@ -606,12 +651,18 @@ export default function SellerPortalPage() {
 
               {isViewingCurrent ? (
                 <div className={styles.actions}>
+                  {hasRecommendation ? (
+                    <span className={styles.recommendedLabel}>Recommended next step</span>
+                  ) : null}
                   {isChoosingAgent ? (
                     <div className={styles.agentChooser}>
                       <h2 className={styles.chooserHeading}>Choose your agent</h2>
-                      {journey.agentCandidates.map((candidate) => {
+                      {candidateOrder.map((candidate) => {
                         const firstName = candidate.name.split(" ")[0];
                         const isConfirming = confirmingAgentId === candidate.id;
+                        const isRecommended = candidate.id === recommendedCandidate?.id;
+                        // Once the client starts confirming someone, their own choice wins.
+                        const highlightAppoint = isRecommended && !confirmingAgentId;
 
                         return (
                           <div
@@ -623,6 +674,11 @@ export default function SellerPortalPage() {
                               <span>
                                 {candidate.suburb} &middot; {candidate.specialty}
                               </span>
+                              {isRecommended ? (
+                                <span className={styles.recommendedBadge}>
+                                  Recommended{recommendedReason ? ` · ${recommendedReason}` : ""}
+                                </span>
+                              ) : null}
                             </div>
                             <span className={styles.rating}>{candidate.rating.toFixed(1)}</span>
                             {isConfirming ? (
@@ -641,9 +697,11 @@ export default function SellerPortalPage() {
                                     Cancel
                                   </button>
                                   <button
-                                    className={styles.appointButton}
+                                    className={`${styles.appointButton} ${styles.recommended}`}
+                                    data-recommended="true"
                                     disabled={isSubmitting}
                                     onClick={() => handleAction("agent_appointed", candidate.id)}
+                                    ref={confirmButtonRef}
                                     type="button"
                                   >
                                     {isSubmitting ? "Appointing…" : `Confirm ${firstName}`}
@@ -652,7 +710,8 @@ export default function SellerPortalPage() {
                               </div>
                             ) : (
                               <button
-                                className={styles.appointButton}
+                                className={`${styles.appointButton} ${highlightAppoint ? styles.recommended : ""}`}
+                                data-recommended={highlightAppoint ? "true" : undefined}
                                 onClick={() => setConfirmingAgentId(candidate.id)}
                                 type="button"
                               >
@@ -664,10 +723,11 @@ export default function SellerPortalPage() {
                       })}
                     </div>
                   ) : (
-                    forwardActions.map((action) => (
+                    forwardActions.map((action, index) => (
                       <button
                         key={`${actor}-${action.to}`}
-                        className={styles.actionButton}
+                        className={`${styles.actionButton} ${index === 0 ? styles.recommended : ""}`}
+                        data-recommended={index === 0 ? "true" : undefined}
                         disabled={isSubmitting}
                         onClick={() => handleAction(action.to)}
                         type="button"
@@ -687,9 +747,10 @@ export default function SellerPortalPage() {
                             <strong>Waiting on the {actorLabels[nextMove.actor].toLowerCase()}</strong>
                             {nextMove.detail}
                           </span>
-                          {isDemo || roleSwitcherEnabled ? (
+                          {canSwitch ? (
                             <button
-                              className={styles.waitingSwitch}
+                              className={`${styles.waitingSwitch} ${styles.recommended}`}
+                              data-recommended="true"
                               onClick={() => handleActorChange(nextMove.actor)}
                               type="button"
                             >
